@@ -1,6 +1,7 @@
 module Main where
 
 import Vish
+import Vish.Backend.Application
 
 gabe :: Character
 gabe = Character {
@@ -18,4 +19,6 @@ simpleScript = do
   done
 
 main :: IO ()
-main = runScript simpleScript
+main = do
+  printScript simpleScript
+  play

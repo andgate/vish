@@ -8,8 +8,9 @@ import Control.Monad.Free
 type Flags = H.BasicHashTable String Bool
 type Expression = String
 type Background = String
+type Name = String
 
-data Character = Character { name :: String }
+data Character = Character { name :: Name }
 
 instance Show Character where
   show (Character s) = s
@@ -28,7 +29,7 @@ data Command next =
   | Done
   deriving(Functor, Show)
 
-data Scene = Scene Flags [Character] Script
+data Scene = Scene Name Script
   deriving Show
 
 showCharacter :: Character -> Expression -> Script
@@ -58,44 +59,73 @@ ifNoFlag f s = liftF $ IfNoFlag f s ()
 done :: Script
 done = liftF Done
 
+nextCommand :: Script -> (Command (), Script)
+nextCommand (Free (ShowCharacter c e next)) =
+  (ShowCharacter c e (), next)
 
-runScript :: Script -> IO ()
-runScript (Free (ShowCharacter c e next)) =
+nextCommand (Free (HideCharacter c next)) =
+  (HideCharacter c (), next)
+
+nextCommand (Free (SetBackground bg next)) =
+  (SetBackground bg (), next)
+
+nextCommand (Free (Speak c str next)) =
+  (Speak c str (), next)
+
+nextCommand (Free (SetScene s next)) =
+  (SetScene s (), next)
+
+nextCommand (Free (SetFlag f p next)) =
+  (SetFlag f p (), next)
+
+nextCommand (Free (IfFlag f s next)) =
+  (IfFlag f s (), next)
+
+nextCommand (Free (IfNoFlag f s next)) =
+  (IfNoFlag f s (), next)
+
+nextCommand (Free Done) =
+  (Done, Pure ())
+nextCommand (Pure _) =
+  (Done, Pure ())
+
+printScript :: Script -> IO ()
+printScript (Free (ShowCharacter c e next)) =
   do putStrLn $ "Showing " ++ show c ++ " as " ++ show e
-     runScript next
+     printScript next
 
-runScript (Free (HideCharacter c next)) =
+printScript (Free (HideCharacter c next)) =
   do putStrLn $ "Hiding " ++ show c ++ "."
-     runScript next
+     printScript next
 
-runScript (Free (SetBackground bg next)) =
+printScript (Free (SetBackground bg next)) =
   do putStrLn $ "Background set to " ++ show bg ++ "."
-     runScript next
+     printScript next
 
-runScript (Free (Speak c str next)) =
+printScript (Free (Speak c str next)) =
   do putStrLn $ show c ++ ": " ++ show str
-     runScript next
+     printScript next
 
-runScript (Free (SetScene s next)) =
-  do putStrLn $ "Entering scene " ++ show s
-     runScript next
+printScript (Free (SetScene (Scene n s) _)) =
+  do putStrLn $ "Entering scene " ++ show n ++ "..."
+     printScript s
 
-runScript (Free (SetFlag f p next)) =
+printScript (Free (SetFlag f p next)) =
   do putStrLn $ "Setting flag " ++ f ++ " to " ++ show p ++ "."
-     runScript next
+     printScript next
 
-runScript (Free (IfFlag f s next)) =
-  do putStrLn $ "If " ++ show f ++ " then run..."
-     runScript s
-     runScript next
+printScript (Free (IfFlag f s next)) =
+  do putStrLn $ "If " ++ show f ++ " then do..."
+     printScript s
+     printScript next
 
-runScript (Free (IfNoFlag f s next)) =
+printScript (Free (IfNoFlag f s next)) =
   do putStrLn $ "If no " ++ show f ++ " then run..."
-     runScript s
-     runScript next
+     printScript s
+     printScript next
 
-runScript (Free Done) =
+printScript (Free Done) =
   return ()
 
-runScript (Pure _) =
+printScript (Pure _) =
   return ()

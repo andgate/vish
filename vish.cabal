@@ -29,6 +29,8 @@ library
                        , hashtables >= 1.1 && < 2
                        , ListZipper >= 1 && < 2
                        , free >= 4 && < 5
+                       , GLUT (==2.7.*)
+                       , OpenGL (==2.12.*)
 
   ghc-options:        -Wall
                       -fno-warn-unused-binds
@@ -39,6 +41,7 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Vish
+                       Vish.Backend.Application
 
 
 executable TestGame
