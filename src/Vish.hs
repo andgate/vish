@@ -10,7 +10,9 @@ type Expression = String
 type Background = String
 
 data Character = Character { name :: String }
-  deriving Show
+
+instance Show Character where
+  show (Character s) = s
 
 type Script = Free Command ()
 
@@ -51,7 +53,49 @@ ifFlag :: String -> Script -> Script
 ifFlag f s = liftF $ IfFlag f s ()
 
 ifNoFlag :: String -> Script -> Script
-ifNoFlag f s = liftF $ IfFlag f s ()
+ifNoFlag f s = liftF $ IfNoFlag f s ()
 
 done :: Script
 done = liftF Done
+
+
+runScript :: Script -> IO ()
+runScript (Free (ShowCharacter c e next)) =
+  do putStrLn $ "Showing " ++ show c ++ " as " ++ show e
+     runScript next
+
+runScript (Free (HideCharacter c next)) =
+  do putStrLn $ "Hiding " ++ show c ++ "."
+     runScript next
+
+runScript (Free (SetBackground bg next)) =
+  do putStrLn $ "Background set to " ++ show bg ++ "."
+     runScript next
+
+runScript (Free (Speak c str next)) =
+  do putStrLn $ show c ++ ": " ++ show str
+     runScript next
+
+runScript (Free (SetScene s next)) =
+  do putStrLn $ "Entering scene " ++ show s
+     runScript next
+
+runScript (Free (SetFlag f p next)) =
+  do putStrLn $ "Setting flag " ++ f ++ " to " ++ show p ++ "."
+     runScript next
+
+runScript (Free (IfFlag f s next)) =
+  do putStrLn $ "If " ++ show f ++ " then run..."
+     runScript s
+     runScript next
+
+runScript (Free (IfNoFlag f s next)) =
+  do putStrLn $ "If no " ++ show f ++ " then run..."
+     runScript s
+     runScript next
+
+runScript (Free Done) =
+  return ()
+
+runScript (Pure _) =
+  return ()

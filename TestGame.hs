@@ -18,4 +18,4 @@ simpleScript = do
   done
 
 main :: IO ()
-main = print simpleScript
+main = runScript simpleScript
