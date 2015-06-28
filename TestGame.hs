@@ -3,19 +3,19 @@ module Main where
 import Vish
 import Vish.Backend.Application
 
-gabe :: Character
-gabe = Character {
+gabe :: Actor
+gabe = Actor {
   name = "Gabriel"
 }
 
 simpleScript :: Script
 simpleScript = do
   setBackground "Raleigh's Basement"
-  showCharacter gabe ":)"
+  showActor gabe ":)"
   speak gabe "Hello world."
   speak gabe "*sad*I am the only person here..."
   speak gabe "*contemplate*Well, *happy*it works!"
-  hideCharacter gabe
+  hideActor gabe
   done
 
 main :: IO ()

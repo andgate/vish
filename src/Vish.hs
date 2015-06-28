@@ -10,18 +10,18 @@ type Expression = String
 type Background = String
 type Name = String
 
-data Character = Character { name :: Name }
+data Actor = Actor { name :: Name }
 
-instance Show Character where
-  show (Character s) = s
+instance Show Actor where
+  show (Actor s) = s
 
 type Script = Free Command ()
 
 data Command next =
-  ShowCharacter Character Expression next
-  | HideCharacter Character next
+  ShowActor Actor Expression next
+  | HideActor Actor next
   | SetBackground Background next
-  | Speak Character String next
+  | Speak Actor String next
   | SetScene Scene next
   | SetFlag String Bool next
   | IfFlag String Script next
@@ -32,16 +32,16 @@ data Command next =
 data Scene = Scene Name Script
   deriving Show
 
-showCharacter :: Character -> Expression -> Script
-showCharacter c e = liftF $ ShowCharacter c e ()
+showActor :: Actor -> Expression -> Script
+showActor c e = liftF $ ShowActor c e ()
 
-hideCharacter :: Character -> Script
-hideCharacter c = liftF $ HideCharacter c ()
+hideActor :: Actor -> Script
+hideActor c = liftF $ HideActor c ()
 
 setBackground :: Background -> Script
 setBackground bg = liftF $ SetBackground bg ()
 
-speak :: Character -> String -> Script
+speak :: Actor -> String -> Script
 speak c str = liftF $ Speak c str ()
 
 setScene :: Scene -> Script
@@ -60,11 +60,11 @@ done :: Script
 done = liftF Done
 
 nextCommand :: Script -> (Command (), Script)
-nextCommand (Free (ShowCharacter c e next)) =
-  (ShowCharacter c e (), next)
+nextCommand (Free (ShowActor c e next)) =
+  (ShowActor c e (), next)
 
-nextCommand (Free (HideCharacter c next)) =
-  (HideCharacter c (), next)
+nextCommand (Free (HideActor c next)) =
+  (HideActor c (), next)
 
 nextCommand (Free (SetBackground bg next)) =
   (SetBackground bg (), next)
@@ -90,11 +90,11 @@ nextCommand (Pure _) =
   (Done, Pure ())
 
 printScript :: Script -> IO ()
-printScript (Free (ShowCharacter c e next)) =
+printScript (Free (ShowActor c e next)) =
   do putStrLn $ "Showing " ++ show c ++ " as " ++ show e
      printScript next
 
-printScript (Free (HideCharacter c next)) =
+printScript (Free (HideActor c next)) =
   do putStrLn $ "Hiding " ++ show c ++ "."
      printScript next
 
