@@ -2,17 +2,17 @@ module Vish.Renderer.Data.Picture where
 
 import Data.Monoid
 
-data Vector2i = Vector2i Float Float
+data Vector2f = Vector2f Float Float
 
-type Size = Vector2i
-type Pos = Vector2i
+type Size = Vector2f
+type Pos = Vector2f
 
 data Picture =
   Blank
-  | Image String
-  | Scale Vector2i
-  | Translate Vector2i
-  | Rotate Vector2i
+  | Image Size String
+  | Scale Vector2f
+  | Translate Vector2f
+  | Rotate Vector2f
   | Text
   | Pictures [Picture] -- renders from the first to the last
 

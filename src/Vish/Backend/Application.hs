@@ -1,23 +1,40 @@
 module Vish.Backend.Application where
 
+
+import qualified Graphics.Rendering.OpenGL.GL           as GL
+import Graphics.Rendering.OpenGL                        (($=), get)
 import Graphics.UI.GLUT
-import Codec.Picture
+
+import Vish.Renderer.Data.Picture
+import Vish.Renderer.Picture
+import Vish.Renderer.Data.Texture
+import Vish.Renderer.Texture
+import System.Mem
 
 play :: IO ()
 play = do
   (_progname, _args) <- getArgsAndInitialize
   initialDisplayMode $= [DoubleBuffered]
   _window <- createWindow _progname
+  GL.depthFunc    $= Just GL.Always
 
-  displayCallback $= display
+  texCache <- initTexCache
+
+  displayCallback $= display texCache
   mainLoop
 
-display :: DisplayCallback
-display = do
+display :: TexCache -> DisplayCallback
+display texCache = do
   clear [ ColorBuffer ]
-  drawRect (-0.5) (-0.5) 1.0 1.0
+
+  drawPicture texCache testPic
+
   flush
   swapBuffers
+  performGC
+
+testPic :: Picture
+testPic = Image (Vector2f 100 100) "data/pics/test.jpg"
 
 drawRect :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
 drawRect x y h w = do
