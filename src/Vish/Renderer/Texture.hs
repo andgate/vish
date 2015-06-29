@@ -34,7 +34,7 @@ texFromJPImg dImg =
     JP.ImageYF img -> error "Image format YF not supported"
     JP.ImageYA8 img -> error "Image format YA8 not supported"
     JP.ImageYA16 img -> error "Image format YA16 not supported"
-    JP.ImageRGB8 img -> uploadTexture img GL.RGB8 GL.RGB GL.UnsignedByte332
+    JP.ImageRGB8 img -> uploadTexture img GL.RGB8 GL.RGB GL.UnsignedByte
     JP.ImageRGB16 img -> uploadTexture img GL.RGB16 GL.RGB GL.UnsignedShort
     JP.ImageRGBF img -> error "Image format RGBF not supported"
     JP.ImageRGBA8 img -> uploadTexture img GL.RGBA8 GL.RGBA GL.UnsignedByte

@@ -24,6 +24,7 @@ drawPicture texCache picture =
 
     Image (Vector2f w h) path -> do
       tex <- loadTexture texCache path
+      let Texture w h _ = tex
       -- Set up wrap and filtering mode
       GL.textureWrapMode GL.Texture2D GL.S $= (GL.Repeated, GL.Repeat)
       GL.textureWrapMode GL.Texture2D GL.T $= (GL.Repeated, GL.Repeat)
@@ -44,7 +45,7 @@ drawPicture texCache picture =
           (\(vX, vY) (tX, tY) -> do
             GL.texCoord $ GL.TexCoord2 (gf tX) (gf tY)
             GL.vertex   $ GL.Vertex2   (gf vX) (gf vY))
-          (imagePath w h)
+          (imagePath (fromIntegral w) (fromIntegral h))
           [(0, 0), (1.0, 0), (1.0, 1.0), (0, 1.0)]
 
       GL.currentColor $= oldColor
