@@ -41,8 +41,10 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Vish
-                       Vish.Stage
+                       Vish.Script
                        Vish.Backend.Application
+                       Vish.Renderer.Picture
+                       Vish.Renderer.Data.Picture
 
 
 executable TestGame

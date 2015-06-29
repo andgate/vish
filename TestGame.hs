@@ -1,6 +1,6 @@
 module Main where
 
-import Vish
+import Vish.Script
 import Vish.Backend.Application
 
 gabe :: Actor
