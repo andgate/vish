@@ -16,6 +16,16 @@ fetchTexture texCache path = do
     Nothing -> loadTexture texCache path
     Just tex -> return tex
 
+unloadTexture :: TexCache -> String -> IO ()
+unloadTexture texCache path = do
+  maybeTex <- H.lookup texCache path
+  case maybeTex of
+    Nothing -> return ()
+    Just tex -> do
+      uninstallTexture tex
+      H.delete texCache path
+
+
 loadTexture :: TexCache -> String -> IO Texture
 loadTexture texCache path = do
   eitherImage <- JP.readImage path
@@ -34,17 +44,17 @@ texFromJPImg dImg =
     JP.ImageYF img -> error "Image format YF not supported"
     JP.ImageYA8 img -> error "Image format YA8 not supported"
     JP.ImageYA16 img -> error "Image format YA16 not supported"
-    JP.ImageRGB8 img -> uploadTexture img GL.RGB8 GL.RGB GL.UnsignedByte
-    JP.ImageRGB16 img -> uploadTexture img GL.RGB16 GL.RGB GL.UnsignedShort
+    JP.ImageRGB8 img -> installTexture img GL.RGB8 GL.RGB GL.UnsignedByte
+    JP.ImageRGB16 img -> installTexture img GL.RGB16 GL.RGB GL.UnsignedShort
     JP.ImageRGBF img -> error "Image format RGBF not supported"
-    JP.ImageRGBA8 img -> uploadTexture img GL.RGBA8 GL.RGBA GL.UnsignedByte
-    JP.ImageRGBA16 img -> uploadTexture img GL.RGBA16 GL.RGBA GL.UnsignedShort
+    JP.ImageRGBA8 img -> installTexture img GL.RGBA8 GL.RGBA GL.UnsignedByte
+    JP.ImageRGBA16 img -> installTexture img GL.RGBA16 GL.RGBA GL.UnsignedShort
     JP.ImageYCbCr8 img -> texFromJPImg . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
     JP.ImageCMYK8 img -> error "Image format CMYK8 not supported"
     JP.ImageCMYK16 img -> error "Image format CMYK16 not supported"
 
-uploadTexture :: (JP.Pixel p) => JP.Image p -> GL.PixelInternalFormat -> GL.PixelFormat -> GL.DataType -> IO Texture
-uploadTexture (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
+installTexture :: (JP.Pixel p) => JP.Image p -> GL.PixelInternalFormat -> GL.PixelFormat -> GL.DataType -> IO Texture
+installTexture (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
   [tex] <- GL.genObjectNames 1
   GL.textureBinding GL.Texture2D $= Just tex
 
@@ -63,3 +73,6 @@ uploadTexture (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
     , texHeight = h
     , texObject = tex
     }
+
+uninstallTexture :: Texture -> IO ()
+uninstallTexture tex = GL.deleteObjectName $ texObject tex
