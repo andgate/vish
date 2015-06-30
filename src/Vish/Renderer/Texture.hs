@@ -69,10 +69,10 @@ loadTexture texCache path = do
   eitherImage <- JP.readImage path
   case eitherImage of
     Left e -> do
-      let msg = path ++ " unable to load with error: " ++ e
-      putStrLn msg
-      return $ Left msg
+      putStrLn e
+      return $ Left e
     Right img -> do
+      putStrLn "Loaded image successfully!"
       tex <- texFromJPImg img
       H.insert texCache path tex
       return $ Right tex
