@@ -22,7 +22,7 @@ instance Monoid Picture where
   mempty = Blank
   mappend a (Blank) = a
   mappend (Blank) b = b
-  mappend (Pictures a) b = Pictures (b:a)
-  mappend a (Pictures b) = Pictures (b ++ [a])
-  mappend a b = Pictures [b, a]
+  mappend (Pictures a) b = Pictures (a ++ [b])
+  mappend a (Pictures b) = Pictures (a:b)
+  mappend a b = Pictures [a, b]
   mconcat = Pictures

@@ -51,4 +51,4 @@ testPNG :: Picture
 testPNG = Image (Vector2f 0 0) "data/pics/test.png"
 
 finalPic :: Picture
-finalPic = testPNG <> testJPG
+finalPic = testJPG <> testPNG
