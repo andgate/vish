@@ -19,20 +19,13 @@ withModelview
         -> IO ()       -- ^ Action to perform.
         -> IO ()
 
-withModelview (sizeX, sizeY) action
- = do
-        GL.matrixMode   $= GL.Projection
-        GL.preservingMatrix
-         $ do
-                -- setup the co-ordinate system
-                GL.loadIdentity
-                let (sx, sy)    = (fromIntegral sizeX, fromIntegral sizeY)
-                GL.ortho 0 sx sy 0 0 (-100)
-
-                -- draw the world
-                GL.matrixMode   $= GL.Modelview 0
-                action
-
-                GL.matrixMode   $= GL.Projection
-
-        GL.matrixMode   $= GL.Modelview 0
+withModelview (sizeX, sizeY) action = do
+  GL.matrixMode   $= GL.Projection
+  GL.preservingMatrix $ do
+    GL.loadIdentity
+    let (sx, sy) = (fromIntegral sizeX, fromIntegral sizeY)
+    GL.ortho 0 sx sy 0 0 (-100)
+    GL.matrixMode $= GL.Modelview 0
+    action
+    GL.matrixMode $= GL.Projection
+  GL.matrixMode $= GL.Modelview 0

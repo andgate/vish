@@ -35,7 +35,6 @@ display texCache =
 
     drawPicture texCache testPic
 
-    GLUT.flush
     GLUT.swapBuffers
     performGC
 

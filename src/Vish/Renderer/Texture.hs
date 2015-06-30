@@ -1,20 +1,58 @@
 module Vish.Renderer.Texture where
 
+
+import Vish.Renderer.Util
+import Vish.Renderer.Data.Texture
+
+import Control.Monad
 import qualified Codec.Picture as JP
 import qualified Codec.Picture.Types as JP
 import qualified Data.HashTable.IO as H
 import qualified Data.Vector.Storable as V
-import Vish.Renderer.Util
-import Vish.Renderer.Data.Texture
 import qualified Graphics.Rendering.OpenGL.GL as GL
-import Graphics.Rendering.OpenGL.GL (($=))
+import Graphics.Rendering.OpenGL.GL (($=), get)
 
-fetchTexture :: TexCache -> String -> IO Texture
+drawTexture :: Texture -> IO ()
+drawTexture tex = do
+  let Texture w h _ = tex
+  -- Set up wrap and filtering mode
+  GL.textureWrapMode GL.Texture2D GL.S $= (GL.Repeated, GL.Repeat)
+  GL.textureWrapMode GL.Texture2D GL.T $= (GL.Repeated, GL.Repeat)
+  GL.textureFilter   GL.Texture2D      $= ((GL.Nearest, Nothing), GL.Nearest)
+
+  -- Enable texturing
+  GL.texture GL.Texture2D $= GL.Enabled
+  GL.textureFunction      $= GL.Combine
+
+  -- Set current texture
+  GL.textureBinding GL.Texture2D $= Just (texObject tex)
+
+  oldColor <- get GL.currentColor
+  GL.currentColor $= GL.Color4 1.0 1.0 1.0 1.0
+
+  GL.renderPrimitive GL.Quads $
+    zipWithM_
+      (\(vX, vY) (tX, tY) -> do
+        GL.texCoord $ GL.TexCoord2 (gf tX) (gf tY)
+        GL.vertex   $ GL.Vertex2   (gf vX) (gf vY))
+      (imagePath (fromIntegral w) (fromIntegral h))
+      [(0, 0), (1.0, 0), (1.0, 1.0), (0, 1.0)]
+
+  GL.currentColor $= oldColor
+
+  GL.texture GL.Texture2D $= GL.Disabled
+
+  where
+    imagePath :: Float -> Float -> [(Float, Float)]
+    imagePath w h =
+      [(0, 0), (w, 0), (w, h), (0,h)]
+
+fetchTexture :: TexCache -> String -> IO (Either String Texture)
 fetchTexture texCache path = do
   maybeTex <- H.lookup texCache path
   case maybeTex of
     Nothing -> loadTexture texCache path
-    Just tex -> return tex
+    Just tex -> return $ Right tex
 
 unloadTexture :: TexCache -> String -> IO ()
 unloadTexture texCache path = do
@@ -26,15 +64,18 @@ unloadTexture texCache path = do
       H.delete texCache path
 
 
-loadTexture :: TexCache -> String -> IO Texture
+loadTexture :: TexCache -> String -> IO (Either String Texture)
 loadTexture texCache path = do
   eitherImage <- JP.readImage path
   case eitherImage of
-    Left e -> error $ path ++ " unable to load with error: " ++ e
+    Left e -> do
+      let msg = path ++ " unable to load with error: " ++ e
+      putStrLn msg
+      return $ Left msg
     Right img -> do
       tex <- texFromJPImg img
       H.insert texCache path tex
-      return tex
+      return $ Right tex
 
 texFromJPImg :: JP.DynamicImage -> IO Texture
 texFromJPImg dImg =
