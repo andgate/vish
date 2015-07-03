@@ -1,4 +1,4 @@
-module Vish.Renderer.Util where
+module Vish.Graphics.Util where
 
 import Unsafe.Coerce
 import qualified Graphics.Rendering.OpenGL.GL as GL

@@ -1,8 +1,7 @@
-module Vish.Renderer.Texture where
+module Vish.Graphics.Texture where
 
-
-import Vish.Renderer.Util
-import Vish.Renderer.Data.Texture
+import Vish.Graphics.Util
+import Vish.Graphics.Data.Texture
 
 import Control.Monad
 import qualified Codec.Picture as JP
@@ -72,27 +71,31 @@ loadTexture texCache path = do
       putStrLn e
       return $ Left e
     Right img -> do
-      putStrLn "Loaded image successfully!"
-      tex <- texFromJPImg img
-      H.insert texCache path tex
-      return $ Right tex
+      eitherTex <- texFromJPImg img
+      case eitherTex of
+        Left e -> do
+          putStrLn e
+          return $ Left e
+        Right tex -> do
+          H.insert texCache path tex
+          return $ Right tex
 
-texFromJPImg :: JP.DynamicImage -> IO Texture
+texFromJPImg :: JP.DynamicImage -> IO (Either String Texture)
 texFromJPImg dImg =
   case dImg of
-    JP.ImageY8 img -> error "Image format Y8 not supported"
-    JP.ImageY16 img -> error "Image format Y16 not supported"
-    JP.ImageYF img -> error "Image format YF not supported"
-    JP.ImageYA8 img -> error "Image format YA8 not supported"
-    JP.ImageYA16 img -> error "Image format YA16 not supported"
-    JP.ImageRGB8 img -> installTexture img GL.RGB8 GL.RGB GL.UnsignedByte
-    JP.ImageRGB16 img -> installTexture img GL.RGB16 GL.RGB GL.UnsignedShort
-    JP.ImageRGBF img -> error "Image format RGBF not supported"
-    JP.ImageRGBA8 img -> installTexture img GL.RGBA8 GL.RGBA GL.UnsignedByte
-    JP.ImageRGBA16 img -> installTexture img GL.RGBA16 GL.RGBA GL.UnsignedShort
+    JP.ImageY8 img -> Right `liftM` installTexture img GL.Luminance8 GL.Luminance GL.UnsignedByte
+    JP.ImageY16 img -> Right `liftM` installTexture img GL.Luminance16 GL.Luminance GL.UnsignedShort
+    JP.ImageYF _ -> return $ Left "32bit Greyscale is unsupported."
+    JP.ImageYA8 img -> Right `liftM` installTexture img GL.Luminance8Alpha8 GL.LuminanceAlpha GL.UnsignedByte
+    JP.ImageYA16 img -> Right `liftM` installTexture img GL.Luminance16Alpha16 GL.LuminanceAlpha GL.UnsignedShort
+    JP.ImageRGB8 img -> Right `liftM` installTexture img GL.RGB8 GL.RGB GL.UnsignedByte
+    JP.ImageRGB16 img -> Right `liftM` installTexture img GL.RGB16 GL.RGB GL.UnsignedShort
+    JP.ImageRGBF _ -> return $ Left "32bit RGB is unsupported"
+    JP.ImageRGBA8 img -> Right `liftM` installTexture img GL.RGBA8 GL.RGBA GL.UnsignedByte
+    JP.ImageRGBA16 img -> Right `liftM` installTexture img GL.RGBA16 GL.RGBA GL.UnsignedShort
     JP.ImageYCbCr8 img -> texFromJPImg . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
-    JP.ImageCMYK8 img -> error "Image format CMYK8 not supported"
-    JP.ImageCMYK16 img -> error "Image format CMYK16 not supported"
+    JP.ImageCMYK8 img -> texFromJPImg . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
+    JP.ImageCMYK16 img -> texFromJPImg . JP.ImageRGB16 $ (JP.convertImage img :: (JP.Image JP.PixelRGB16))
 
 installTexture :: (JP.Pixel p) => JP.Image p -> GL.PixelInternalFormat -> GL.PixelFormat -> GL.DataType -> IO Texture
 installTexture (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do

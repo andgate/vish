@@ -1,11 +1,12 @@
-module Vish.Renderer.Picture where
+module Vish.Graphics.Picture where
 
-import Vish.Renderer.Data.Picture
-import Vish.Renderer.Texture
-import Vish.Renderer.Data.Texture
-import Vish.Renderer.Util
+import Vish.Graphics.Data.Picture
+import Vish.Graphics.Texture
+import Vish.Graphics.Data.Texture
+import Vish.Graphics.Util
 
 import Control.Monad
+import Control.Monad.Free
 import Graphics.Rendering.OpenGL                        (($=), get)
 import qualified Graphics.Rendering.OpenGL.GL           as GL
 import qualified Graphics.UI.GLUT                       as GLUT
@@ -17,18 +18,21 @@ drawPicture texCache picture =
   case picture of
     Blank ->
       return ()
-    Translate (Vector2f x y) ->
-      GL.preservingMatrix $ do
-        GL.translate (GL.Vector3 (gf x) (gf y) 0)
-        drawPicture texCache picture
 
-    Image (Vector2f w h) path -> do
+    Image path next -> do
       eitherTex <- fetchTexture texCache path
       case eitherTex of
         Left _ -> return ()
         Right tex -> drawTexture tex
+      drawPicture texCache next
 
-    Pictures ps ->
-      mapM_ (drawPicture texCache) ps
+    Translate (Vector2f x y) next ->
+      GL.preservingMatrix $ do
+        GL.translate (GL.Vector3 (gf x) (gf y) 0)
+        drawPicture texCache next
+
+    Pictures pics ->
+      mapM_ (drawPicture texCache) pics
+
     _ ->
       return ()

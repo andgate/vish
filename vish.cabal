@@ -42,13 +42,14 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Vish
+                       Vish.Util
                        Vish.Script
                        Vish.Backend.Application
-                       Vish.Renderer.Picture
-                       Vish.Renderer.Data.Picture
-                       Vish.Renderer.Texture
-                       Vish.Renderer.Data.Texture
-                       Vish.Renderer.Util
+                       Vish.Graphics.Picture
+                       Vish.Graphics.Data.Picture
+                       Vish.Graphics.Texture
+                       Vish.Graphics.Data.Texture
+                       Vish.Graphics.Util
 
 executable TestGame
   main-is: TestGame.hs

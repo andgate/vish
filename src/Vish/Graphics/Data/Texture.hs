@@ -1,4 +1,4 @@
-module Vish.Renderer.Data.Texture where
+module Vish.Graphics.Data.Texture where
 
 import qualified Data.HashTable.IO as H
 import qualified Graphics.Rendering.OpenGL.GL as GL

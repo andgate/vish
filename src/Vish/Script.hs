@@ -18,7 +18,8 @@ instance Show Actor where
 type Script = Free Command ()
 
 data Command next =
-  ShowActor Actor Expression next
+  Done
+  | ShowActor Actor Expression next
   | HideActor Actor next
   | SetBackground Background next
   | Speak Actor String next
@@ -26,7 +27,6 @@ data Command next =
   | SetFlag String Bool next
   | IfFlag String Script next
   | IfNoFlag String Script next
-  | Done
   deriving(Functor, Show)
 
 data Scene = Scene Name Script
@@ -84,48 +84,42 @@ nextCommand (Free (IfFlag f s next)) =
 nextCommand (Free (IfNoFlag f s next)) =
   (IfNoFlag f s (), next)
 
-nextCommand (Free Done) =
-  (Done, Pure ())
 nextCommand (Pure _) =
+  (Done, Pure ())
+nextCommand (Free Done) =
   (Done, Pure ())
 
 printScript :: Script -> IO ()
-printScript (Free (ShowActor c e next)) =
-  do putStrLn $ "Showing " ++ show c ++ " as " ++ show e
-     printScript next
+printScript = iterM printCommand
 
-printScript (Free (HideActor c next)) =
-  do putStrLn $ "Hiding " ++ show c ++ "."
-     printScript next
-
-printScript (Free (SetBackground bg next)) =
-  do putStrLn $ "Background set to " ++ show bg ++ "."
-     printScript next
-
-printScript (Free (Speak c str next)) =
-  do putStrLn $ show c ++ ": " ++ show str
-     printScript next
-
-printScript (Free (SetScene (Scene n s) _)) =
-  do putStrLn $ "Entering scene " ++ show n ++ "..."
-     printScript s
-
-printScript (Free (SetFlag f p next)) =
-  do putStrLn $ "Setting flag " ++ f ++ " to " ++ show p ++ "."
-     printScript next
-
-printScript (Free (IfFlag f s next)) =
-  do putStrLn $ "If " ++ show f ++ " then do..."
-     printScript s
-     printScript next
-
-printScript (Free (IfNoFlag f s next)) =
-  do putStrLn $ "If no " ++ show f ++ " then run..."
-     printScript s
-     printScript next
-
-printScript (Free Done) =
-  return ()
-
-printScript (Pure _) =
-  return ()
+printCommand :: Command (IO ()) -> IO ()
+printCommand cmd =
+  case cmd of
+    ShowActor c e next -> do
+      putStrLn $ "Showing " ++ show c ++ " as " ++ show e
+      next
+    HideActor c next -> do
+      putStrLn $ "Hiding " ++ show c ++ "."
+      next
+    SetBackground bg next -> do
+      putStrLn $ "Background set to " ++ show bg ++ "."
+      next
+    Speak c str next -> do
+      putStrLn $ show c ++ ": " ++ show str
+      next
+    SetScene (Scene n s) next -> do
+      putStrLn $ "Entering scene " ++ show n ++ "..."
+      printScript s
+      next
+    SetFlag f p next -> do
+      putStrLn $ "Setting flag " ++ f ++ " to " ++ show p ++ "."
+      next
+    IfFlag f s next -> do
+      putStrLn $ "If " ++ show f ++ " then do..."
+      printScript s
+      next
+    IfNoFlag f s next -> do
+      putStrLn $ "If no " ++ show f ++ " then run..."
+      printScript s
+      next
+    Done -> return ()

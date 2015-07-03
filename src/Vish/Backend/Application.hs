@@ -7,11 +7,12 @@ import qualified Graphics.UI.GLUT as GLUT
 
 import Data.Monoid
 
-import Vish.Renderer.Data.Picture
-import Vish.Renderer.Picture
-import Vish.Renderer.Data.Texture
-import Vish.Renderer.Texture
-import Vish.Renderer.Util
+import Vish.Util
+import Vish.Graphics.Data.Picture
+import Vish.Graphics.Picture
+import Vish.Graphics.Data.Texture
+import Vish.Graphics.Texture
+import Vish.Graphics.Util
 
 import System.Mem
 
@@ -44,11 +45,16 @@ display texCache =
     GLUT.swapBuffers
     performGC
 
-testJPG :: Picture
-testJPG = Image (Vector2f 100 100) "data/pics/test.jpg"
+testPic :: Picture
+testPic =
+  image "data/pics/test.jpg"
+    # translateXY 50 50
 
-testPNG :: Picture
-testPNG = Image (Vector2f 0 0) "data/pics/test.png"
+dicePic :: Picture
+dicePic =
+  image "data/pics/dice.png"
+    # translateXY (-50) (-50)
 
 finalPic :: Picture
-finalPic = testJPG <> testPNG
+finalPic =
+  testPic <> dicePic
