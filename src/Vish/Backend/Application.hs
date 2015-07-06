@@ -16,6 +16,23 @@ import Vish.Graphics.Util
 
 import System.Mem
 
+testPicPath = "data/pics/test.jpg"
+dicePicPath = "data/pics/dice.png"
+
+testPic :: Picture
+testPic =
+  image testPicPath
+    # translateXY 50 50
+
+dicePic :: Picture
+dicePic =
+  image dicePicPath
+    # translateXY (-50) (-50)
+
+finalPic :: Picture
+finalPic =
+  testPic <> dicePic
+
 play :: IO ()
 play = do
   (_progname, _args) <- GLUT.getArgsAndInitialize
@@ -26,7 +43,9 @@ play = do
   _window <- GLUT.createWindow _progname
   GL.depthFunc    $= Just GL.Always
 
-  texCache <- initTexCache
+  texCache <- mkTexCache
+  installTexture texCache testPicPath
+  installTexture texCache dicePicPath
 
   putStrLn . show $ finalPic
 
@@ -44,17 +63,3 @@ display texCache =
 
     GLUT.swapBuffers
     performGC
-
-testPic :: Picture
-testPic =
-  image "data/pics/test.jpg"
-    # translateXY 50 50
-
-dicePic :: Picture
-dicePic =
-  image "data/pics/dice.png"
-    # translateXY (-50) (-50)
-
-finalPic :: Picture
-finalPic =
-  testPic <> dicePic

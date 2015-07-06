@@ -6,7 +6,6 @@ import Vish.Graphics.Data.Texture
 import Vish.Graphics.Util
 
 import Control.Monad
-import Control.Monad.Free
 import Graphics.Rendering.OpenGL                        (($=), get)
 import qualified Graphics.Rendering.OpenGL.GL           as GL
 import qualified Graphics.UI.GLUT                       as GLUT
@@ -29,6 +28,16 @@ drawPicture texCache picture =
     Translate (Vector2f x y) next ->
       GL.preservingMatrix $ do
         GL.translate (GL.Vector3 (gf x) (gf y) 0)
+        drawPicture texCache next
+
+    Rotate deg next ->
+      GL.preservingMatrix $ do
+        GL.rotate (gf deg) (GL.Vector3 0 0 (-1))
+        drawPicture texCache next
+
+    Scale (Vector2f x y) next ->
+      GL.preservingMatrix $ do
+        GL.scale (gf x) (gf y) 1
         drawPicture texCache next
 
     Pictures pics ->

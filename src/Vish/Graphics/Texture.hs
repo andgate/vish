@@ -4,6 +4,7 @@ import Vish.Graphics.Util
 import Vish.Graphics.Data.Texture
 
 import Control.Monad
+import Data.Maybe
 import qualified Codec.Picture as JP
 import qualified Codec.Picture.Types as JP
 import qualified Data.HashTable.IO as H
@@ -11,9 +12,38 @@ import qualified Data.Vector.Storable as V
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=), get)
 
+
+installTexture :: TexCache -> String -> IO ()
+installTexture texCache path =
+  loadTexture path >>= either putStrLn (cacheTexture texCache)
+
+uninstallTexture :: TexCache -> String -> IO ()
+uninstallTexture texCache path =
+  fetchTexture texCache path >>= either putStrLn (unsafeUninstallTexture texCache path)
+
+unsafeUninstallTexture :: TexCache -> String -> Texture -> IO ()
+unsafeUninstallTexture texCache path tex =
+  uncacheTexture texCache path >> unloadTexture tex
+
+mkTexCache :: IO TexCache
+mkTexCache = H.new
+
+cacheTexture :: TexCache -> Texture -> IO ()
+cacheTexture texCache tex =
+  H.insert texCache (texPath tex) tex
+
+fetchTexture :: TexCache -> String -> IO (Either String Texture)
+fetchTexture texCache path =
+  let noTexMsg = "Texture not cached at " ++ path
+  in liftM (maybe (Left noTexMsg) Right) $ H.lookup texCache path
+
+uncacheTexture :: TexCache -> String -> IO ()
+uncacheTexture texCache path =
+  H.delete texCache path
+
 drawTexture :: Texture -> IO ()
 drawTexture tex = do
-  let Texture w h _ = tex
+  let Texture _ w h _ = tex
   -- Set up wrap and filtering mode
   GL.textureWrapMode GL.Texture2D GL.S $= (GL.Repeated, GL.Repeat)
   GL.textureWrapMode GL.Texture2D GL.T $= (GL.Repeated, GL.Repeat)
@@ -46,59 +76,32 @@ drawTexture tex = do
     imagePath w h =
       [(0, 0), (w, 0), (w, h), (0,h)]
 
-fetchTexture :: TexCache -> String -> IO (Either String Texture)
-fetchTexture texCache path = do
-  maybeTex <- H.lookup texCache path
-  case maybeTex of
-    Nothing -> loadTexture texCache path
-    Just tex -> return $ Right tex
+unloadTexture :: Texture -> IO ()
+unloadTexture tex = GL.deleteObjectName $ texObject tex
 
-unloadTexture :: TexCache -> String -> IO ()
-unloadTexture texCache path = do
-  maybeTex <- H.lookup texCache path
-  case maybeTex of
-    Nothing -> return ()
-    Just tex -> do
-      uninstallTexture tex
-      H.delete texCache path
+loadTexture :: String -> IO (Either String Texture)
+loadTexture path =
+  JP.readImage path >>= either (return . Left) (texFromJPImg path)
 
-
-loadTexture :: TexCache -> String -> IO (Either String Texture)
-loadTexture texCache path = do
-  eitherImage <- JP.readImage path
-  case eitherImage of
-    Left e -> do
-      putStrLn e
-      return $ Left e
-    Right img -> do
-      eitherTex <- texFromJPImg img
-      case eitherTex of
-        Left e -> do
-          putStrLn e
-          return $ Left e
-        Right tex -> do
-          H.insert texCache path tex
-          return $ Right tex
-
-texFromJPImg :: JP.DynamicImage -> IO (Either String Texture)
-texFromJPImg dImg =
+texFromJPImg :: String -> JP.DynamicImage -> IO (Either String Texture)
+texFromJPImg path dImg =
   case dImg of
-    JP.ImageY8 img -> Right `liftM` installTexture img GL.Luminance8 GL.Luminance GL.UnsignedByte
-    JP.ImageY16 img -> Right `liftM` installTexture img GL.Luminance16 GL.Luminance GL.UnsignedShort
+    JP.ImageY8 img -> Right `liftM` gpuLoadTexture path img GL.Luminance8 GL.Luminance GL.UnsignedByte
+    JP.ImageY16 img -> Right `liftM` gpuLoadTexture path img GL.Luminance16 GL.Luminance GL.UnsignedShort
     JP.ImageYF _ -> return $ Left "32bit Greyscale is unsupported."
-    JP.ImageYA8 img -> Right `liftM` installTexture img GL.Luminance8Alpha8 GL.LuminanceAlpha GL.UnsignedByte
-    JP.ImageYA16 img -> Right `liftM` installTexture img GL.Luminance16Alpha16 GL.LuminanceAlpha GL.UnsignedShort
-    JP.ImageRGB8 img -> Right `liftM` installTexture img GL.RGB8 GL.RGB GL.UnsignedByte
-    JP.ImageRGB16 img -> Right `liftM` installTexture img GL.RGB16 GL.RGB GL.UnsignedShort
+    JP.ImageYA8 img -> Right `liftM` gpuLoadTexture path img GL.Luminance8Alpha8 GL.LuminanceAlpha GL.UnsignedByte
+    JP.ImageYA16 img -> Right `liftM` gpuLoadTexture path img GL.Luminance16Alpha16 GL.LuminanceAlpha GL.UnsignedShort
+    JP.ImageRGB8 img -> Right `liftM` gpuLoadTexture path img GL.RGB8 GL.RGB GL.UnsignedByte
+    JP.ImageRGB16 img -> Right `liftM` gpuLoadTexture path img GL.RGB16 GL.RGB GL.UnsignedShort
     JP.ImageRGBF _ -> return $ Left "32bit RGB is unsupported"
-    JP.ImageRGBA8 img -> Right `liftM` installTexture img GL.RGBA8 GL.RGBA GL.UnsignedByte
-    JP.ImageRGBA16 img -> Right `liftM` installTexture img GL.RGBA16 GL.RGBA GL.UnsignedShort
-    JP.ImageYCbCr8 img -> texFromJPImg . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
-    JP.ImageCMYK8 img -> texFromJPImg . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
-    JP.ImageCMYK16 img -> texFromJPImg . JP.ImageRGB16 $ (JP.convertImage img :: (JP.Image JP.PixelRGB16))
+    JP.ImageRGBA8 img -> Right `liftM` gpuLoadTexture path img GL.RGBA8 GL.RGBA GL.UnsignedByte
+    JP.ImageRGBA16 img -> Right `liftM` gpuLoadTexture path img GL.RGBA16 GL.RGBA GL.UnsignedShort
+    JP.ImageYCbCr8 img -> texFromJPImg path . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
+    JP.ImageCMYK8 img -> texFromJPImg path . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
+    JP.ImageCMYK16 img -> texFromJPImg path . JP.ImageRGB16 $ (JP.convertImage img :: (JP.Image JP.PixelRGB16))
 
-installTexture :: (JP.Pixel p) => JP.Image p -> GL.PixelInternalFormat -> GL.PixelFormat -> GL.DataType -> IO Texture
-installTexture (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
+gpuLoadTexture :: (JP.Pixel p) => String -> JP.Image p -> GL.PixelInternalFormat -> GL.PixelFormat -> GL.DataType -> IO Texture
+gpuLoadTexture path (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
   [tex] <- GL.genObjectNames 1
   GL.textureBinding GL.Texture2D $= Just tex
 
@@ -113,10 +116,8 @@ installTexture (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
       (GL.PixelData pixelFormat datatype ptr)
 
   return Texture
-    { texWidth = w
+    { texPath = path
+    , texWidth = w
     , texHeight = h
     , texObject = tex
     }
-
-uninstallTexture :: Texture -> IO ()
-uninstallTexture tex = GL.deleteObjectName $ texObject tex

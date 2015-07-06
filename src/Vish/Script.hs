@@ -89,6 +89,8 @@ nextCommand (Pure _) =
 nextCommand (Free Done) =
   (Done, Pure ())
 
+
+
 printScript :: Script -> IO ()
 printScript = iterM printCommand
 

@@ -13,7 +13,7 @@ data Picture =
   | Image String Picture
   | Scale Vector2f Picture
   | Translate Vector2f Picture
-  | Rotate Vector2f Picture
+  | Rotate Float Picture
   | Text String Picture
   | Pictures [Picture]
   deriving (Show)
@@ -40,8 +40,8 @@ translateXY x y = Translate (Vector2f x y)
 translate ::  Vector2f -> Picture -> Picture
 translate = Translate
 
-rotate :: Picture -> Vector2f -> Picture
-rotate pic v = Rotate v pic
+rotate :: Picture -> Float -> Picture
+rotate pic deg = Rotate deg pic
 
 scale :: Picture -> Vector2f -> Picture
 scale pic v = Scale v pic
