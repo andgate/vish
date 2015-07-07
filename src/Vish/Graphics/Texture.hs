@@ -38,8 +38,11 @@ fetchTexture texCache path =
   in liftM (maybe (Left noTexMsg) Right) $ H.lookup texCache path
 
 uncacheTexture :: TexCache -> String -> IO ()
-uncacheTexture texCache path =
-  H.delete texCache path
+uncacheTexture = H.delete
+
+scrubTexCache :: TexCache -> IO ()
+scrubTexCache texCache =
+  H.toList texCache >>= mapM_ (uncurry $ unsafeUninstallTexture texCache)
 
 drawTexture :: Texture -> IO ()
 drawTexture tex = do
