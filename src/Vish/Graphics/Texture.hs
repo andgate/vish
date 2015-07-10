@@ -34,8 +34,8 @@ cacheTexture texCache tex =
 
 fetchTexture :: TexCache -> String -> IO (Either String Texture)
 fetchTexture texCache path =
-  let noTexMsg = "Texture not cached at " ++ path
-  in liftM (maybe (Left noTexMsg) Right) $ H.lookup texCache path
+  liftM (maybe (Left noTexMsg) Right) $ H.lookup texCache path
+  where noTexMsg = "Texture not cached at " ++ path
 
 uncacheTexture :: TexCache -> String -> IO ()
 uncacheTexture = H.delete

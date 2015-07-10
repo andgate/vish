@@ -2,15 +2,33 @@
 
 module Vish.Script where
 
+import Data.Maybe
+import Data.Functor
+import Control.Applicative
+import Data.List as List
+import Data.Set (Set)
+import qualified Data.Set as Set
 import qualified Data.HashTable.IO as H
 import Control.Monad.Free
+import qualified Data.Text as T
+import qualified Data.Attoparsec.Text as P
 
 type Flags = H.BasicHashTable String Bool
-type Expression = String
 type Background = String
 type Name = String
+type Expression = String
+type Expressions = Set Expression
 
-data Actor = Actor { name :: Name }
+data Actor = Actor Name
+
+data ActorState = ActorState Actor Expression
+  deriving Show
+
+actorState :: Name -> Expression -> ActorState
+actorState n = ActorState (Actor n)
+
+getActorState :: ActorState -> (Name, Expression)
+getActorState (ActorState (Actor n) e) = (n, e)
 
 instance Show Actor where
   show (Actor s) = s
@@ -19,8 +37,10 @@ type Script = Free Command ()
 
 data Command next =
   Done
-  | ShowActor Actor Expression next
-  | HideActor Actor next
+  | ShowActor ActorState next
+  | ShowActors ActorState ActorState next
+  | HideActors next
+  | Pause Float next
   | SetBackground Background next
   | Speak Actor String next
   | SetScene Scene next
@@ -32,17 +52,24 @@ data Command next =
 data Scene = Scene Name Script
   deriving Show
 
-showActor :: Actor -> Expression -> Script
-showActor c e = liftF $ ShowActor c e ()
+showActor :: Name -> Expression -> Script
+showActor c e = liftF $ ShowActor (actorState c e) ()
 
-hideActor :: Actor -> Script
-hideActor c = liftF $ HideActor c ()
+showActors :: Name -> Expression -> Name -> Expression -> Script
+showActors l e1 r e2 =
+  liftF $ ShowActors (actorState l e1) (actorState r e2) ()
+
+hideActors :: Script
+hideActors = liftF $ HideActors ()
+
+pause :: Float -> Script
+pause s = liftF $ Pause s ()
 
 setBackground :: Background -> Script
 setBackground bg = liftF $ SetBackground bg ()
 
-speak :: Actor -> String -> Script
-speak c str = liftF $ Speak c str ()
+speak :: String -> String -> Script
+speak c str = liftF $ Speak (Actor c) str ()
 
 setScene :: Scene -> Script
 setScene s = liftF $ SetScene s ()
@@ -60,14 +87,20 @@ done :: Script
 done = liftF Done
 
 nextCommand :: Script -> (Command (), Script)
-nextCommand (Free (ShowActor c e next)) =
-  (ShowActor c e (), next)
+nextCommand (Free (ShowActor c next)) =
+  (ShowActor c (), next)
 
-nextCommand (Free (HideActor c next)) =
-  (HideActor c (), next)
+nextCommand (Free (ShowActors l r next)) =
+  (ShowActors l r (), next)
+
+nextCommand (Free (HideActors next)) =
+  (HideActors (), next)
 
 nextCommand (Free (SetBackground bg next)) =
   (SetBackground bg (), next)
+
+nextCommand (Free (Pause s next)) =
+  (Pause s (), next)
 
 nextCommand (Free (Speak c str next)) =
   (Speak c str (), next)
@@ -89,7 +122,60 @@ nextCommand (Pure _) =
 nextCommand (Free Done) =
   (Done, Pure ())
 
+maybeNextCommand :: Script -> Maybe (Command (), Script)
+maybeNextCommand (Pure _) = Nothing
+maybeNextCommand (Free Done) = Nothing
+maybeNextCommand s = Just $ nextCommand s
 
+scriptToList :: Script -> [Command ()]
+scriptToList = List.unfoldr maybeNextCommand
+
+commandReq :: Command () -> [(Name, Expression)]
+commandReq (ShowActor c _) =
+  [getActorState c]
+commandReq (ShowActors l r _) =
+  [getActorState l, getActorState r]
+commandReq (Speak (Actor c) msg _) =
+  fmap (\e -> (c,e)) . getActorExprs $ parseActorMsg msg
+commandReq _ =
+  []
+
+data ActorMessage = ActorNothing | ActorMessage String | ActorExpression String
+  deriving Show
+
+getActorExpr :: ActorMessage -> Maybe Expression
+getActorExpr (ActorExpression e) = Just e
+getActorExpr _ = Nothing
+
+getActorExprs :: [ActorMessage] -> [Expression]
+getActorExprs = mapMaybe getActorExpr
+
+parseActorMsg :: String -> [ActorMessage]
+parseActorMsg msg =
+  let result = P.parseOnly actorMsgs (T.pack msg) in
+  either (error "Parse failed") id result
+  where
+    actorMsgs :: P.Parser [ActorMessage]
+    actorMsgs =
+      P.many' $ exprEscape <|> actorExpr <|> actorMsg
+
+    exprEscape :: P.Parser ActorMessage
+    exprEscape = do
+      P.char '\\'
+      c <- P.char '*'
+      return $ ActorMessage [c]
+
+    actorMsg :: P.Parser ActorMessage
+    actorMsg = do
+      str <- P.takeWhile1 $ \c -> c /= '*' && c /= '\\'
+      return . ActorMessage . T.unpack $ str
+
+    actorExpr :: P.Parser ActorMessage
+    actorExpr = do
+      P.char '*'
+      str <- P.takeWhile1 (/= '*')
+      P.char '*'
+      return . ActorExpression . T.unpack $ str
 
 printScript :: Script -> IO ()
 printScript = iterM printCommand
@@ -97,11 +183,17 @@ printScript = iterM printCommand
 printCommand :: Command (IO ()) -> IO ()
 printCommand cmd =
   case cmd of
-    ShowActor c e next -> do
-      putStrLn $ "Showing " ++ show c ++ " as " ++ show e
+    ShowActor c next -> do
+      putStrLn $ "Showing " ++ show c
       next
-    HideActor c next -> do
-      putStrLn $ "Hiding " ++ show c ++ "."
+    ShowActors l r next -> do
+      putStrLn $ "Showing " ++ show l ++ " and " ++ show r
+      next
+    HideActors next -> do
+      putStrLn "Hiding actors."
+      next
+    Pause s next -> do
+      putStrLn $ "Pausing for " ++ show s ++ " seconds."
       next
     SetBackground bg next -> do
       putStrLn $ "Background set to " ++ show bg ++ "."
