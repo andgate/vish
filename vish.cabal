@@ -13,7 +13,7 @@ copyright:           Copyight (C) 2015 Gabriel Anderson
 category:            Text
 build-type:          Simple
 -- extra-source-files:
-cabal-version:       >=1.10
+cabal-version:       >=1.18
 
 data-dir:            data
 
@@ -22,18 +22,20 @@ source-repository     head
   location:           https://www.github.com:andgate/vish.git
 
 library
-  default-language:    Haskell2010
+  default-language:   Haskell2010
 
-  build-depends:       base < 5 && >= 4
-                       , text >= 1.2 && < 1.3
-                       , attoparsec >= 0.1 && < 1
-                       , hashtables >= 1.1 && < 2
-                       , free >= 4 && < 5
-                       , GLUT (==2.7.*)
-                       , OpenGL (==2.12.*)
-                       , JuicyPixels >= 3 && < 4
-                       , vector >= 0.10 && < 1
-                       , containers >= 0.5 && < 1
+  build-depends:      base < 5 && >= 4
+                      , text >= 1.2 && < 1.3
+                      , attoparsec >= 0.1 && < 1
+                      , hashtables >= 1.1 && < 2
+                      , free >= 4 && < 5
+                      , GLUT (==2.7.*)
+                      , OpenGL (==2.12.*)
+                      , JuicyPixels >= 3 && < 4
+                      , vector >= 0.10 && < 1
+                      , containers >= 0.5 && < 1
+
+  default-extensions: OverloadedStrings
 
   ghc-options:        -Wall
                       -fno-warn-unused-binds
@@ -41,22 +43,23 @@ library
                       -fno-warn-unused-imports
                       -fno-warn-type-defaults
 
-  hs-source-dirs:      src
+  hs-source-dirs:     src
 
-  exposed-modules:     Vish
-                       Vish.Util
-                       Vish.Script
-                       --Vish.Interpreter
-                       Vish.Backend.Application
-                       Vish.Graphics.Picture
-                       Vish.Graphics.Data.Picture
-                       Vish.Graphics.Texture
-                       Vish.Graphics.Data.Texture
-                       Vish.Graphics.Util
+  exposed-modules:    Vish
+                      Vish.Util
+                      Vish.Script
+                      --Vish.Interpreter
+                      Vish.Backend.Application
+                      Vish.Graphics.Picture
+                      Vish.Graphics.Data.Picture
+                      Vish.Graphics.Texture
+                      Vish.Graphics.Data.Texture
+                      Vish.Graphics.Util
 
 executable TestGame
-  main-is: TestGame.hs
-  default-language:    Haskell2010
+  main-is:            TestGame.hs
+  default-language:   Haskell2010
+  default-extensions: OverloadedStrings
   build-depends:
     base < 5
    ,vish

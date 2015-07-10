@@ -17,5 +17,6 @@ simpleScript = do
 main :: IO ()
 main = do
   printScript simpleScript
-  putStrLn . show . getActorExprs . parseActorMsg $ "*contemplate*Well, *happy*\\*happyface\\*it works!"
-  play
+  putStrLn . show . validateActorMsg $ "*contemplate*Well, *happy*\\*happyface\\*it works!"
+  putStrLn . show . parseActorMsg $ "*contemplate*Well, *happy*\\*happyface\\*it works!"
+  --play

@@ -136,24 +136,32 @@ commandReq (ShowActor c _) =
 commandReq (ShowActors l r _) =
   [getActorState l, getActorState r]
 commandReq (Speak (Actor c) msg _) =
-  fmap (\e -> (c,e)) . getActorExprs $ parseActorMsg msg
+  fmap (\e -> (c,e)) . getActorMsgExprs . parseActorMsg . T.pack $ msg
 commandReq _ =
   []
 
-data ActorMessage = ActorNothing | ActorMessage String | ActorExpression String
-  deriving Show
+data ActorMessage = ActorMessage String | ActorExpression String
 
-getActorExpr :: ActorMessage -> Maybe Expression
-getActorExpr (ActorExpression e) = Just e
-getActorExpr _ = Nothing
+getActorMsgExpr :: ActorMessage -> Maybe Expression
+getActorMsgExpr (ActorExpression e) = Just e
+getActorMsgExpr _ = Nothing
 
-getActorExprs :: [ActorMessage] -> [Expression]
-getActorExprs = mapMaybe getActorExpr
+getActorMsgExprs :: [ActorMessage] -> [Expression]
+getActorMsgExprs = mapMaybe getActorMsgExpr
 
-parseActorMsg :: String -> [ActorMessage]
+validateActorMsg :: T.Text -> Bool
+validateActorMsg =  even . T.length . T.filter (== '*') . T.replace "\\*" ""
+
+instance Show ActorMessage where
+  show msg =
+    case msg of
+      ActorMessage m    -> m
+      ActorExpression e -> "*" ++ e ++ "*"
+
+parseActorMsg :: T.Text -> [ActorMessage]
 parseActorMsg msg =
-  let result = P.parseOnly actorMsgs (T.pack msg) in
-  either (error "Parse failed") id result
+  let result = P.parseOnly actorMsgs msg in
+  either (const []) id result
   where
     actorMsgs :: P.Parser [ActorMessage]
     actorMsgs =
