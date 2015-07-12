@@ -7,7 +7,7 @@ import Data.Functor
 import Control.Applicative
 import Data.List as List
 import Data.Set (Set)
-import qualified Data.Set as Set
+import qualified Data.Set as S
 import qualified Data.HashTable.IO as H
 import Control.Monad.Free
 import qualified Data.Text as T
@@ -17,7 +17,7 @@ type Flags = H.BasicHashTable String Bool
 type Background = String
 type Name = String
 type Expression = String
-type Expressions = Set Expression
+type ExprSet = S.Set (Name, Expression)
 
 data Actor = Actor Name
 
@@ -130,14 +130,20 @@ maybeNextCommand s = Just $ nextCommand s
 scriptToList :: Script -> [Command ()]
 scriptToList = List.unfoldr maybeNextCommand
 
-commandReq :: Command () -> [(Name, Expression)]
-commandReq (ShowActor c _) =
+getExpressionSet :: Script -> ExprSet
+getExpressionSet = foldr S.insert S.empty . extractActorExprs
+
+extractActorExprs :: Script -> [(Name, Expression)]
+extractActorExprs = concatMap extractActorExpr . scriptToList
+
+extractActorExpr :: Command () -> [(Name, Expression)]
+extractActorExpr (ShowActor c _) =
   [getActorState c]
-commandReq (ShowActors l r _) =
+extractActorExpr (ShowActors l r _) =
   [getActorState l, getActorState r]
-commandReq (Speak (Actor c) msg _) =
+extractActorExpr (Speak (Actor c) msg _) =
   fmap (\e -> (c,e)) . getActorMsgExprs . parseActorMsg . T.pack $ msg
-commandReq _ =
+extractActorExpr _ =
   []
 
 data ActorMessage = ActorMessage String | ActorExpression String
