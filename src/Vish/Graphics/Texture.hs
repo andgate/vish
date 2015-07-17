@@ -16,7 +16,7 @@ supportedExtensions = ["bmp", "jpg", "png", "tga", "tiff"]
 
 installTexture :: TexCache -> String -> String -> IO ()
 installTexture texCache path tag =
-  loadTexture path >>= either putStrLn (cacheTexture texCache tag)
+  loadTexture path >>= either error (cacheTexture texCache tag)
 
 uninstallTexture :: TexCache -> String -> IO ()
 uninstallTexture texCache path =

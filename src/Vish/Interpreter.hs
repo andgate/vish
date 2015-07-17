@@ -21,8 +21,8 @@ actorDirectory :: Name -> FilePath
 actorDirectory name =
   "data" </> "actor" </> name </> ""
 
-findExprFile :: Name -> Expression -> IO FilePath
-findExprFile name expr = do
+findExprFile :: (Name, Expression) -> IO FilePath
+findExprFile (name, expr) = do
   contents <- getDirectoryContents $ actorDirectory name
   let matches = mapMaybe (=~~ actorExprRegex name expr) contents
   case matches of
@@ -30,17 +30,13 @@ findExprFile name expr = do
     [x] -> return x
     xs -> error $ "File conflicts for " ++ name ++ " with expression " ++ expr ++ ": " ++ show xs
 
-loadActorTexture :: Name -> Expression -> IO Texture
-loadActorTexture name expr =
-  findExprFile name expr >>= loadTexture >>= either error return
+installActorTexture :: TexCache -> (Name, Expression) -> IO ()
+installActorTexture texCache actorExpr = do
+  let tag = actorExprTag actorExpr
+  path <- findExprFile actorExpr
+  installTexture texCache path tag
 
-loadAllActorTextures :: Script -> IO [(String, Texture)]
-loadAllActorTextures script =
+installActorTextures :: TexCache -> Script -> IO ()
+installActorTextures texCache script =
   let actorsExprs = S.toList . getExpressionSet $ script
-      actorsExprTags = map actorExprTag actorsExprs
-  in liftM (zip actorsExprTags) $ mapM (uncurry loadActorTexture) actorsExprs
-
-cacheActorTextures :: TexCache -> Script -> IO ()
-cacheActorTextures texCache script = do
-  taggedTexs <- loadAllActorTextures script
-  mapM_ (uncurry $ cacheTexture texCache) taggedTexs
+  in mapM_ (installActorTexture texCache) actorsExprs
