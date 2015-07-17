@@ -133,8 +133,8 @@ scriptToList = List.unfoldr maybeNextCommand
 getExpressionSet :: Script -> ExprSet
 getExpressionSet = foldr S.insert S.empty . extractActorExprs
 
-actorExprTag :: (Name, Expression) -> String
-actorExprTag (name, expr) = name ++ "_" ++ expr
+actorTag :: (Name, Expression) -> String
+actorTag (name, expr) = name ++ "_" ++ expr
 
 extractActorExprs :: Script -> [(Name, Expression)]
 extractActorExprs = concatMap extractActorExpr . scriptToList
