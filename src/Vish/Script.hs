@@ -6,7 +6,6 @@ import Data.Maybe
 import Data.Functor
 import Control.Applicative
 import Data.List as List
-import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.HashTable.IO as H
 import Control.Monad.Free
@@ -17,32 +16,19 @@ type Flags = H.BasicHashTable String Bool
 type Background = String
 type Name = String
 type Expression = String
-type ExprSet = S.Set (Name, Expression)
 
-data Actor = Actor Name
-
-data ActorState = ActorState Actor Expression
-  deriving Show
-
-actorState :: Name -> Expression -> ActorState
-actorState n = ActorState (Actor n)
-
-getActorState :: ActorState -> (Name, Expression)
-getActorState (ActorState (Actor n) e) = (n, e)
-
-instance Show Actor where
-  show (Actor s) = s
+type Actor = (Name, Expression)
 
 type Script = Free Command ()
 
 data Command next =
   Done
-  | ShowActor ActorState next
-  | ShowActors ActorState ActorState next
+  | ShowActor Actor next
+  | ShowActors Actor Actor next
   | HideActors next
   | Pause Float next
   | SetBackground Background next
-  | Speak Actor String next
+  | Speak Name String next
   | SetScene Scene next
   | SetFlag String Bool next
   | IfFlag String Script next
@@ -53,11 +39,11 @@ data Scene = Scene Name Script
   deriving Show
 
 showActor :: Name -> Expression -> Script
-showActor c e = liftF $ ShowActor (actorState c e) ()
+showActor c e = liftF $ ShowActor (c, e) ()
 
 showActors :: Name -> Expression -> Name -> Expression -> Script
 showActors l e1 r e2 =
-  liftF $ ShowActors (actorState l e1) (actorState r e2) ()
+  liftF $ ShowActors (l, e1) (r, e2) ()
 
 hideActors :: Script
 hideActors = liftF $ HideActors ()
@@ -69,7 +55,7 @@ setBackground :: Background -> Script
 setBackground bg = liftF $ SetBackground bg ()
 
 speak :: String -> String -> Script
-speak c str = liftF $ Speak (Actor c) str ()
+speak name msg = liftF $ Speak name msg ()
 
 setScene :: Scene -> Script
 setScene s = liftF $ SetScene s ()
@@ -130,33 +116,43 @@ maybeNextCommand s = Just $ nextCommand s
 scriptToList :: Script -> [Command ()]
 scriptToList = List.unfoldr maybeNextCommand
 
-getExpressionSet :: Script -> ExprSet
-getExpressionSet = foldr S.insert S.empty . extractActorExprs
+getActors :: Script -> [Actor]
+getActors = S.toList . foldr S.insert S.empty . extractActors
 
 actorTag :: (Name, Expression) -> String
 actorTag (name, expr) = name ++ "_" ++ expr
 
-extractActorExprs :: Script -> [(Name, Expression)]
-extractActorExprs = concatMap extractActorExpr . scriptToList
+extractActors :: Script -> [Actor]
+extractActors = concatMap cmdToActors . scriptToList
 
-extractActorExpr :: Command () -> [(Name, Expression)]
-extractActorExpr (ShowActor c _) =
-  [getActorState c]
-extractActorExpr (ShowActors l r _) =
-  [getActorState l, getActorState r]
-extractActorExpr (Speak (Actor c) msg _) =
-  fmap (\e -> (c,e)) . getActorMsgExprs . parseActorMsg . T.pack $ msg
-extractActorExpr _ =
+cmdToActors :: Command () -> [Actor]
+cmdToActors (ShowActor c _) =
+  [c]
+cmdToActors (ShowActors l r _) =
+  [l, r]
+cmdToActors (Speak name msg _) =
+  fmap (\e -> (name,e)) . getActorExprs . parseActorMsg . T.pack $ msg
+cmdToActors _ =
   []
+
+getBgs :: Script -> [Background]
+getBgs = S.toList . foldr S.insert S.empty . extractBgs
+
+extractBgs :: Script -> [Background]
+extractBgs = mapMaybe cmdToBg . scriptToList
+
+cmdToBg :: Command () -> Maybe Background
+cmdToBg (SetBackground bg _) = Just bg
+cmdToBg _ = Nothing
 
 data ActorMessage = ActorMessage String | ActorExpression String
 
-getActorMsgExpr :: ActorMessage -> Maybe Expression
-getActorMsgExpr (ActorExpression e) = Just e
-getActorMsgExpr _ = Nothing
+getActorExpr :: ActorMessage -> Maybe Expression
+getActorExpr (ActorExpression e) = Just e
+getActorExpr _ = Nothing
 
-getActorMsgExprs :: [ActorMessage] -> [Expression]
-getActorMsgExprs = mapMaybe getActorMsgExpr
+getActorExprs :: [ActorMessage] -> [Expression]
+getActorExprs = mapMaybe getActorExpr
 
 validateActorMsg :: T.Text -> Bool
 validateActorMsg =  even . T.length . T.filter (== '*') . T.replace "\\*" ""

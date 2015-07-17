@@ -10,21 +10,22 @@ import qualified Data.HashTable.IO as H
 import qualified Data.Vector.Storable as V
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=), get)
+import System.FilePath
 
 supportedExtensions :: [String]
 supportedExtensions = ["bmp", "jpg", "png", "tga", "tiff"]
 
-installTexture :: TexCache -> String -> String -> IO ()
+installTexture :: TexCache -> FilePath -> String -> IO ()
 installTexture texCache path tag =
   loadTexture path >>= either error (cacheTexture texCache tag)
 
 uninstallTexture :: TexCache -> String -> IO ()
-uninstallTexture texCache path =
-  fetchTexture texCache path >>= either putStrLn (unsafeUninstallTexture texCache path)
+uninstallTexture texCache tag =
+  fetchTexture texCache tag >>= either putStrLn (unsafeUninstallTexture texCache tag)
 
 unsafeUninstallTexture :: TexCache -> String -> Texture -> IO ()
-unsafeUninstallTexture texCache path tex =
-  uncacheTexture texCache path >> unloadTexture tex
+unsafeUninstallTexture texCache tag tex =
+  uncacheTexture texCache tag >> unloadTexture tex
 
 mkTexCache :: IO TexCache
 mkTexCache = H.new
@@ -83,11 +84,11 @@ drawTexture tex = do
 unloadTexture :: Texture -> IO ()
 unloadTexture tex = GL.deleteObjectName $ texObject tex
 
-loadTexture :: String -> IO (Either String Texture)
+loadTexture :: FilePath -> IO (Either String Texture)
 loadTexture path =
   JP.readImage path >>= either (return . Left) (texFromJPImg path)
 
-texFromJPImg :: String -> JP.DynamicImage -> IO (Either String Texture)
+texFromJPImg :: FilePath -> JP.DynamicImage -> IO (Either String Texture)
 texFromJPImg path dImg =
   case dImg of
     JP.ImageY8 img -> Right `liftM` gpuLoadTexture path img GL.Luminance8 GL.Luminance GL.UnsignedByte
@@ -104,7 +105,7 @@ texFromJPImg path dImg =
     JP.ImageCMYK8 img -> texFromJPImg path . JP.ImageRGB8 $ (JP.convertImage img :: (JP.Image JP.PixelRGB8))
     JP.ImageCMYK16 img -> texFromJPImg path . JP.ImageRGB16 $ (JP.convertImage img :: (JP.Image JP.PixelRGB16))
 
-gpuLoadTexture :: (JP.Pixel p) => String -> JP.Image p -> GL.PixelInternalFormat -> GL.PixelFormat -> GL.DataType -> IO Texture
+gpuLoadTexture :: (JP.Pixel p) => FilePath -> JP.Image p -> GL.PixelInternalFormat -> GL.PixelFormat -> GL.DataType -> IO Texture
 gpuLoadTexture path (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
   [tex] <- GL.genObjectNames 1
   GL.textureBinding GL.Texture2D $= Just tex

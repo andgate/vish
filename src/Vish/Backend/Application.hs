@@ -44,8 +44,8 @@ play = do
   GL.depthFunc    $= Just GL.Always
 
   texCache <- mkTexCache
-  installTexture texCache testPicPath
-  installTexture texCache dicePicPath
+  installTexture texCache testPicPath testPicPath
+  installTexture texCache dicePicPath dicePicPath
 
   putStrLn . show $ finalPic
 

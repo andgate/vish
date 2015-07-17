@@ -6,7 +6,6 @@ import Vish.Graphics.Texture
 import Vish.Graphics.Picture
 import Vish.Util
 import Data.Maybe
-import qualified Data.Set as S
 import System.Directory
 import System.FilePath
 import Text.Regex.TDFA
@@ -27,7 +26,7 @@ bgRegex :: Name -> String
 bgRegex name =
   bgDirectory </> name <.> "*"
 
-findActorFile :: (Name, Expression) -> IO FilePath
+findActorFile :: Actor -> IO FilePath
 findActorFile (name, expr) = do
   contents <- getDirectoryContents $ actorDirectory name
   let matches = mapMaybe (=~~ actorRegex name expr) contents
@@ -45,18 +44,23 @@ findBgFile name = do
     [x] -> return x
     xs -> error $ "File conflicts for background " ++ name ++ ": " ++ show xs
 
-installActorTexture :: TexCache -> (Name, Expression) -> IO ()
+installActorTexture :: TexCache -> Actor -> IO ()
 installActorTexture texCache actor = do
   let tag = actorTag actor
   path <- findActorFile actor
   installTexture texCache path tag
 
-installActorTextures :: TexCache -> Script -> IO ()
-installActorTextures texCache script =
-  let actors = S.toList . getExpressionSet $ script
+installScriptActors :: TexCache -> Script -> IO ()
+installScriptActors texCache script =
+  let actors = getActors script
   in mapM_ (installActorTexture texCache) actors
 
-installBgTexture :: TexCache -> Name -> IO ()
+installBgTexture :: TexCache -> Background -> IO ()
 installBgTexture texCache name = do
   path <- findBgFile name
   installTexture texCache path name
+
+installScriptBgs :: TexCache -> Script -> IO ()
+installScriptBgs texCache script =
+  let bgs = getBgs script
+  in mapM_ (installBgTexture texCache) bgs
