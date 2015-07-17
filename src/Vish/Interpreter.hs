@@ -27,7 +27,8 @@ findExprFile name expr = do
   let matches = mapMaybe (=~~ actorExprRegex name expr) contents
   case matches of
     []  -> error $ "No image found for " ++ name ++ " with expression " ++ expr
-    x:_ -> return x
+    [x] -> return x
+    xs -> error $ "File conflicts for " ++ name ++ " with expression " ++ expr ++ ": " ++ show xs
 
 loadActorTexture :: Name -> Expression -> IO Texture
 loadActorTexture name expr =
