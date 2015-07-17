@@ -4,7 +4,6 @@ import Vish.Graphics.Util
 import Vish.Graphics.Data.Texture
 
 import Control.Monad
-import Data.Maybe
 import qualified Codec.Picture as JP
 import qualified Codec.Picture.Types as JP
 import qualified Data.HashTable.IO as H
@@ -12,10 +11,12 @@ import qualified Data.Vector.Storable as V
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=), get)
 
+supportedExtensions :: [String]
+supportedExtensions = ["bmp", "jpg", "png", "tga", "tiff"]
 
-installTexture :: TexCache -> String -> IO ()
-installTexture texCache path =
-  loadTexture path >>= either putStrLn (cacheTexture texCache)
+installTexture :: TexCache -> String -> String -> IO ()
+installTexture texCache path tag =
+  loadTexture path >>= either putStrLn (cacheTexture texCache tag)
 
 uninstallTexture :: TexCache -> String -> IO ()
 uninstallTexture texCache path =
@@ -28,9 +29,9 @@ unsafeUninstallTexture texCache path tex =
 mkTexCache :: IO TexCache
 mkTexCache = H.new
 
-cacheTexture :: TexCache -> Texture -> IO ()
-cacheTexture texCache tex =
-  H.insert texCache (texPath tex) tex
+cacheTexture :: TexCache -> String -> Texture -> IO ()
+cacheTexture texCache tag tex =
+  H.insert texCache tag tex
 
 fetchTexture :: TexCache -> String -> IO (Either String Texture)
 fetchTexture texCache path =
