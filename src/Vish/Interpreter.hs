@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Vish.Interpreter where
 
 import Vish.Script
@@ -51,9 +53,8 @@ installActorTexture texCache actor = do
   installTexture texCache path tag
 
 installScriptActors :: TexCache -> Script -> IO ()
-installScriptActors texCache script =
-  let actors = getActors script
-  in mapM_ (installActorTexture texCache) actors
+installScriptActors texCache =
+  mapM_ (installActorTexture texCache) . getActors
 
 installBgTexture :: TexCache -> Background -> IO ()
 installBgTexture texCache name = do
@@ -61,6 +62,11 @@ installBgTexture texCache name = do
   installTexture texCache path name
 
 installScriptBgs :: TexCache -> Script -> IO ()
-installScriptBgs texCache script =
-  let bgs = getBgs script
-  in mapM_ (installBgTexture texCache) bgs
+installScriptBgs texCache =
+  mapM_ (installBgTexture texCache) . getBgs
+
+initScript :: TexCache -> Script -> IO ()
+initScript texCache script = do
+  scrubTexCache texCache -- Needs to be clean for new script
+  installScriptBgs texCache script
+  installScriptActors texCache script

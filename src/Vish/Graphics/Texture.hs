@@ -15,9 +15,15 @@ import System.FilePath
 supportedExtensions :: [String]
 supportedExtensions = ["bmp", "jpg", "png", "tga", "tiff"]
 
+mkTexCache :: IO TexCache
+mkTexCache = H.new
+
 installTexture :: TexCache -> FilePath -> String -> IO ()
 installTexture texCache path tag =
   loadTexture path >>= either error (cacheTexture texCache tag)
+
+uncacheTexture :: TexCache -> String -> IO ()
+uncacheTexture = H.delete
 
 uninstallTexture :: TexCache -> String -> IO ()
 uninstallTexture texCache tag =
@@ -27,8 +33,11 @@ unsafeUninstallTexture :: TexCache -> String -> Texture -> IO ()
 unsafeUninstallTexture texCache tag tex =
   uncacheTexture texCache tag >> unloadTexture tex
 
-mkTexCache :: IO TexCache
-mkTexCache = H.new
+-- | Uninstall all the textures and empty the
+-- entries in the texture cache.
+scrubTexCache :: TexCache -> IO ()
+scrubTexCache texCache =
+  H.toList texCache >>= mapM_ (uncurry $ unsafeUninstallTexture texCache)
 
 cacheTexture :: TexCache -> String -> Texture -> IO ()
 cacheTexture texCache tag tex =
@@ -38,13 +47,6 @@ fetchTexture :: TexCache -> String -> IO (Either String Texture)
 fetchTexture texCache path =
   liftM (maybe (Left noTexMsg) Right) $ H.lookup texCache path
   where noTexMsg = "Texture not cached at " ++ path
-
-uncacheTexture :: TexCache -> String -> IO ()
-uncacheTexture = H.delete
-
-scrubTexCache :: TexCache -> IO ()
-scrubTexCache texCache =
-  H.toList texCache >>= mapM_ (uncurry $ unsafeUninstallTexture texCache)
 
 drawTexture :: Texture -> IO ()
 drawTexture tex = do

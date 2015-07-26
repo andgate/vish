@@ -1,40 +1,46 @@
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RankNTypes #-}
+
 module Vish.Backend.Application where
 
 
-import qualified Graphics.Rendering.OpenGL.GL           as GL
-import Graphics.Rendering.OpenGL                        (($=), get)
-import qualified Graphics.UI.GLUT as GLUT
+import           Graphics.Rendering.OpenGL    (get, ($=))
+import qualified Graphics.Rendering.OpenGL.GL as GL
+import qualified Graphics.UI.GLUT             as GLUT
 
-import Data.Monoid
+import           Control.Lens
 
-import Vish.Util
-import Vish.Graphics.Data.Picture
-import Vish.Graphics.Picture
-import Vish.Graphics.Data.Texture
-import Vish.Graphics.Texture
-import Vish.Graphics.Util
+import           Data.Monoid
 
-import System.Mem
+import           Vish.Graphics.Data.Picture
+import           Vish.Graphics.Data.Texture
+import           Vish.Graphics.Picture
+import           Vish.Graphics.Texture
+import           Vish.Graphics.Util
+import           Vish.Util
 
-testPicPath = "data/pics/test.jpg"
-dicePicPath = "data/pics/dice.png"
+import           Data.IORef
+import           System.Mem
 
-testPic :: Picture
-testPic =
-  image testPicPath
-    # translateXY 50 50
+class World w where
+  worldUpdate :: w -> IO w
+  worldDraw :: w -> IO (Picture, w)
+  worldPostUpdate :: w -> IO w
 
-dicePic :: Picture
-dicePic =
-  image dicePicPath
-    # translateXY (-50) (-50)
+data App w = App
+  { _appTexCache :: TexCache,
+    _appWorld :: w
+  }
 
-finalPic :: Picture
-finalPic =
-  testPic <> dicePic
+makeLenses ''App
 
-play :: IO ()
-play = do
+mkApp :: World w => w -> IO (App w)
+mkApp w = do
+  texCache <- mkTexCache
+  return $ App texCache w
+
+play :: World w => w -> IO ()
+play world = do
   (_progname, _args) <- GLUT.getArgsAndInitialize
   GLUT.initialDisplayMode $= [ GLUT.DoubleBuffered]
   GLUT.initialWindowSize $=
@@ -43,23 +49,24 @@ play = do
   _window <- GLUT.createWindow _progname
   GL.depthFunc    $= Just GL.Always
 
-  texCache <- mkTexCache
-  installTexture texCache testPicPath testPicPath
-  installTexture texCache dicePicPath dicePicPath
+  app <- mkApp world
+  appRef <- newIORef app
 
-  putStrLn . show $ finalPic
-
-  GLUT.displayCallback $= display texCache
+  GLUT.displayCallback $= displayUpdate appRef
   GLUT.mainLoop
 
-display :: TexCache -> GLUT.DisplayCallback
-display texCache =
+displayUpdate :: World w => IORef (App w) -> GLUT.DisplayCallback
+displayUpdate appRef =
   withModelview (640, 480) $ do
     GLUT.clear [ GLUT.ColorBuffer ]
     GLUT.blend $= GLUT.Enabled
     GLUT.blendFunc $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
 
-    drawPicture texCache finalPic
+    app <- readIORef appRef
+    (pic, world') <- worldDraw =<< worldUpdate (app^.appWorld)
+    writeIORef appRef $ (appWorld .~ world') app
+
+    drawPicture (app^.appTexCache) pic
 
     GLUT.swapBuffers
     performGC
