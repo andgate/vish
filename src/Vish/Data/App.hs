@@ -1,4 +1,4 @@
-module Vish.Backend.Data.App where
+module Vish.Data.App where
 
 import Control.Lens
 
@@ -6,10 +6,11 @@ import Vish.Graphics.Data.Picture
 import Vish.Graphics.Data.Texture
 import Vish.Graphics.Texture
 
-class World w where
-  worldUpdate :: w -> IO w
-  worldDraw :: w -> IO (Picture, w)
-  worldPostUpdate :: w -> IO w
+class AppListener w where
+  appStart :: App w -> IO (App w)
+  appUpdate :: App w -> IO (App w)
+  appDraw :: App w -> IO (Picture, App w)
+  appPostUpdate :: App w -> IO (App w)
 
 data App w = App
   { _appGfx :: Gfx,
@@ -23,10 +24,10 @@ data Gfx = Gfx
 makeLenses ''App
 makeLenses ''Gfx
 
-mkApp :: World w => w -> IO (App w)
-mkApp w = do
+mkApp :: AppListener w => w -> IO (App w)
+mkApp world = do
   gfx <- mkGfx
-  return $ App gfx w
+  return $ App gfx world
 
 mkGfx :: IO Gfx
 mkGfx = do

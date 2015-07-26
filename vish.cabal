@@ -62,8 +62,9 @@ library
   exposed-modules:    Vish
                       Vish.Util
                       Vish.Script
-                      --Vish.Interpreter
-                      Vish.Backend.Application
+                      Vish.Interpreter
+                      Vish.Data.App
+                      Vish.Backend.App
                       Vish.Graphics.Picture
                       Vish.Graphics.Data.Picture
                       Vish.Graphics.Texture
