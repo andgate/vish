@@ -5,12 +5,7 @@ import Vish.Graphics.Texture
 import Vish.Graphics.Data.Texture
 import Vish.Graphics.Util
 
-import Control.Monad
-import Graphics.Rendering.OpenGL                        (($=), get)
 import qualified Graphics.Rendering.OpenGL.GL           as GL
-import qualified Graphics.UI.GLUT                       as GLUT
-
-
 
 drawPicture :: TexCache -> Picture -> IO ()
 drawPicture texCache picture =
