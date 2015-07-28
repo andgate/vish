@@ -7,7 +7,7 @@ import Vish.Graphics.Data.Texture
 import Vish.Graphics.Texture
 
 class AppListener w where
-  appStart :: App w -> IO (App w)
+  appStart :: App w -> IO (App w) 
   appUpdate :: App w -> IO (App w)
   appDraw :: App w -> IO (Picture, App w)
   appPostUpdate :: App w -> IO (App w)

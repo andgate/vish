@@ -64,7 +64,10 @@ library
                       Vish.Script
                       Vish.Interpreter
                       Vish.Data.App
+                      Vish.Application.Window
                       Vish.Backend.App
+                      Vish.Backend.Types
+                      Vish.Backend.GLFW
                       Vish.Graphics.Picture
                       Vish.Graphics.Data.Picture
                       Vish.Graphics.Texture
