@@ -3,7 +3,7 @@
 module Vish.Backend.Types where
 
 import Data.IORef
-import Vish.Application.Window
+import Vish.Application.Data.Window
 
 -- | The functions every backend window managed backend needs to support.
 --

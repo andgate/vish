@@ -65,6 +65,7 @@ library
                       Vish.Interpreter
                       Vish.Data.App
                       Vish.Application.Window
+                      Vish.Application.Data.Window
                       Vish.Backend.App
                       Vish.Backend.Types
                       Vish.Backend.GLUT

@@ -1,3 +1,3 @@
 module Vish.Application.Window where
 
-data Window = Window
+import Vish.Application.Data.Window

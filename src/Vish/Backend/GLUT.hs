@@ -1,9 +1,10 @@
 module Vish.Backend.GLUT where
 
 import Vish.Backend.Types
-import Vish.Application.Window
+import Vish.Application.Data.Window
 
 import Control.Concurrent
+import Control.Lens
 import Control.Monad
 
 import Data.IORef
@@ -85,46 +86,31 @@ initGLUT _ debug
 
 
 -- Open Window ----------------------------------------------------------------
-openWindowGLUT
-        :: IORef GLUTState
-        -> Window
-        -> IO ()
+openWindowGLUT :: IORef GLUTState -> Window -> IO ()
+openWindowGLUT _ win = do
+  GLUT.initialWindowSize
+    $= GL.Size (fromIntegral $ win^.winW) (fromIntegral $ win^.winH)
 
-openWindowGLUT _ display
- = do
-       -- Setup and create a new window.
-       -- Be sure to set initialWindow{Position,Size} before calling
-       -- createWindow. If we don't do this we get wierd half-created
-       -- windows some of the time.
-        case display of
-          InWindow windowName (sizeX, sizeY) (posX, posY) ->
-            do GLUT.initialWindowSize
-                     $= GL.Size
-                          (fromIntegral sizeX)
-                          (fromIntegral sizeY)
+  GLUT.initialWindowPosition
+    $= GL.Position (fromIntegral $ win^.winX) (fromIntegral $ win^.winY)
 
-               GLUT.initialWindowPosition
-                     $= GL.Position
-                          (fromIntegral posX)
-                          (fromIntegral posY)
+  GLUT.createWindow $ win^.winName
 
-               _ <- GLUT.createWindow windowName
+  GLUT.windowSize
+    $= GL.Size (fromIntegral $ win^.winH) (fromIntegral $ win^.winW)
 
-               GLUT.windowSize
-                     $= GL.Size
-                          (fromIntegral sizeX)
-                          (fromIntegral sizeY)
+  case win^.winState of
+    FullScreen -> do
+      GLUT.gameModeCapabilities $=
+           [ GLUT.Where' GLUT.GameModeWidth GLUT.IsEqualTo $ win^.winW
+           , GLUT.Where' GLUT.GameModeHeight GLUT.IsEqualTo $ win^.winH ]
+      void GLUT.enterGameMode
+    Windowed -> return ()
 
-          FullScreen (sizeX, sizeY) ->
-            do GLUT.gameModeCapabilities $=
-                 [ GLUT.Where' GLUT.GameModeWidth GLUT.IsEqualTo sizeX
-                 , GLUT.Where' GLUT.GameModeHeight GLUT.IsEqualTo sizeY ]
-               void GLUT.enterGameMode
-
-        --  Switch some things.
-        --  auto repeat interferes with key up / key down checks.
-        --  BUGS: this doesn't seem to work?
-        GLUT.perWindowKeyRepeat   $= GLUT.PerWindowKeyRepeatOff
+  --  Switch some things.
+  --  auto repeat interferes with key up / key down checks.
+  --  BUGS: this doesn't seem to work?
+  GLUT.perWindowKeyRepeat   $= GLUT.PerWindowKeyRepeatOff
 
 
 -- Dump State -----------------------------------------------------------------
