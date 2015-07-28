@@ -1,6 +1,6 @@
-module Vish.Backend.GLUT where
+module Vish.Application.Backend.GLUT where
 
-import Vish.Backend.Types
+import Vish.Application.Backend.Types
 import Vish.Application.Data.Window
 
 import Control.Concurrent
@@ -13,7 +13,7 @@ import Graphics.UI.GLUT                    (get,($=))
 import qualified Graphics.UI.GLUT          as GLUT
 import qualified Graphics.Rendering.OpenGL as GL
 
-import qualified System.Exit                    as System
+import qualified System.Exit               as System
 
 
 -- | We don't maintain any state information for the GLUT backend,
@@ -150,73 +150,49 @@ dumpStateGLUT _
                 ++ "\n"
 
 -- Display Callback -----------------------------------------------------------
-installDisplayCallbackGLUT
-        :: IORef GLUTState -> [Callback]
-        -> IO ()
-installDisplayCallbackGLUT ref callbacks
-        = GLUT.displayCallback $= callbackDisplay ref callbacks
+installDisplayCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installDisplayCallbackGLUT ref callbacks =
+  GLUT.displayCallback $= callbackDisplay ref callbacks
 
-callbackDisplay
-        :: IORef GLUTState -> [Callback]
-        -> IO ()
+callbackDisplay :: IORef GLUTState -> Callbacks -> IO ()
+callbackDisplay ref callbacks = do
+  GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+  GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
 
-callbackDisplay ref callbacks
- = do   -- clear the display
-        GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-        GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
+  -- get the display callbacks from the chain
+  displayCallback callbacks ref
 
-        -- get the display callbacks from the chain
-        let funs  = [f ref | (Display f) <- callbacks]
-        sequence_ funs
+  -- swap front and back buffers
+  GLUT.swapBuffers
 
-        -- swap front and back buffers
-        GLUT.swapBuffers
+  -- Don't report errors by default.
+  -- The windows OpenGL implementation seems to complain for no reason.
+  --  GLUT.reportErrors
 
-    -- Don't report errors by default.
-    -- The windows OpenGL implementation seems to complain for no reason.
-    --  GLUT.reportErrors
 
-        return ()
 
 -- Reshape Callback -----------------------------------------------------------
-installReshapeCallbackGLUT
-        :: IORef GLUTState -> [Callback]
-        -> IO ()
+installReshapeCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installReshapeCallbackGLUT ref callbacks =
+  GLUT.reshapeCallback $= Just (callbackReshape ref callbacks)
 
-installReshapeCallbackGLUT ref callbacks
-        = GLUT.reshapeCallback $= Just (callbackReshape ref callbacks)
-
-callbackReshape
-        :: IORef GLUTState -> [Callback]
-        -> GLUT.Size
-        -> IO ()
-
-callbackReshape ref callbacks (GLUT.Size sizeX sizeY)
-        = sequence_
-        $ map   (\f -> f (fromEnum sizeX, fromEnum sizeY))
-                [f ref | Reshape f <- callbacks]
+callbackReshape :: IORef GLUTState -> Callbacks -> GLUT.Size -> IO ()
+callbackReshape ref callbacks (GLUT.Size sizeX sizeY) =
+  reshapeCallback callbacks ref (fromEnum sizeX, fromEnum sizeY)
 
 
 -- KeyMouse Callback ----------------------------------------------------------
-installKeyMouseCallbackGLUT
-        :: IORef GLUTState -> [Callback]
-        -> IO ()
+installKeyMouseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installKeyMouseCallbackGLUT ref callbacks =
+  GLUT.keyboardMouseCallback $= Just (callbackKeyMouse ref callbacks)
 
-installKeyMouseCallbackGLUT ref callbacks
-        = GLUT.keyboardMouseCallback $= Just (callbackKeyMouse ref callbacks)
-
-callbackKeyMouse
-        :: IORef GLUTState -> [Callback]
-        -> GLUT.Key
-        -> GLUT.KeyState
-        -> GLUT.Modifiers
-        -> GLUT.Position
-        -> IO ()
-
-callbackKeyMouse ref callbacks key keystate modifiers (GLUT.Position posX posY)
-  = sequence_
-  $ map (\f -> f key' keyState' modifiers' pos)
-      [f ref | KeyMouse f <- callbacks]
+callbackKeyMouse :: IORef GLUTState -> Callbacks
+                 -> GLUT.Key -> GLUT.KeyState -> GLUT.Modifiers -> GLUT.Position
+                 -> IO ()
+callbackKeyMouse ref callbacks
+                 key keystate modifiers
+                 (GLUT.Position posX posY) =
+  keyboardMouseCallback callbacks ref key' keyState' modifiers' pos
   where
     key'       = glutKeyToKey key
     keyState'  = glutKeyStateToKeyState keystate
@@ -225,41 +201,25 @@ callbackKeyMouse ref callbacks key keystate modifiers (GLUT.Position posX posY)
 
 
 -- Motion Callback ------------------------------------------------------------
-installMotionCallbackGLUT
-        :: IORef GLUTState -> [Callback]
-        -> IO ()
+installMotionCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installMotionCallbackGLUT ref callbacks = do
+  GLUT.motionCallback        $= Just (callbackMotion ref callbacks)
+  GLUT.passiveMotionCallback $= Just (callbackMotion ref callbacks)
 
-installMotionCallbackGLUT ref callbacks
- = do   GLUT.motionCallback        $= Just (callbackMotion ref callbacks)
-        GLUT.passiveMotionCallback $= Just (callbackMotion ref callbacks)
-
-callbackMotion
-        :: IORef GLUTState -> [Callback]
-        -> GLUT.Position
-        -> IO ()
-
-callbackMotion ref callbacks (GLUT.Position posX posY)
- = do   let pos = (fromEnum posX, fromEnum posY)
-        sequence_
-         $ map  (\f -> f pos)
-                [f ref | Motion f <- callbacks]
+callbackMotion :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
+callbackMotion ref callbacks (GLUT.Position posX posY) =
+  motionCallback callbacks ref pos
+  where pos = (fromEnum posX, fromEnum posY)
 
 
 -- Idle Callback --------------------------------------------------------------
-installIdleCallbackGLUT
-        :: IORef GLUTState -> [Callback]
-        -> IO ()
+installIdleCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installIdleCallbackGLUT ref callbacks =
+  GLUT.idleCallback $= Just (callbackIdle ref callbacks)
 
-installIdleCallbackGLUT ref callbacks
-        = GLUT.idleCallback $= Just (callbackIdle ref callbacks)
-
-callbackIdle
-        :: IORef GLUTState -> [Callback]
-        -> IO ()
-
-callbackIdle ref callbacks
-        = sequence_
-        $ [f ref | Idle f <- callbacks]
+callbackIdle :: IORef GLUTState -> Callbacks -> IO ()
+callbackIdle ref callbacks =
+  idleCallback callbacks ref
 
 -------------------------------------------------------------------------------
 -- | Convert GLUTs key codes to our internal ones.
@@ -319,9 +279,7 @@ glutKeyStateToKeyState state
 
 
 -- | Convert GLUTs key states to our internal ones.
-glutModifiersToModifiers
-        :: GLUT.Modifiers
-        -> Modifiers
+glutModifiersToModifiers :: GLUT.Modifiers -> Modifiers
 
 glutModifiersToModifiers (GLUT.Modifiers a b c)
         = Modifiers     (glutKeyStateToKeyState a)

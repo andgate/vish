@@ -21,6 +21,14 @@ source-repository     head
   type:               git
   location:           https://www.github.com:andgate/vish.git
 
+Flag GLUT
+  Description: Enable the GLUT backend
+  Default:     True
+
+Flag GLFW
+  Description: Enable the GLFW backend
+  Default:     False
+
 library
   default-language:   Haskell2010
 
@@ -29,7 +37,6 @@ library
                       , attoparsec >= 0.1 && < 1
                       , hashtables >= 1.1 && < 2
                       , free >= 4 && < 5
-                      , GLUT (==2.7.*)
                       , OpenGL (==2.12.*)
                       , JuicyPixels >= 3 && < 4
                       , vector >= 0.10 && < 1
@@ -63,17 +70,29 @@ library
                       Vish.Util
                       Vish.Script
                       Vish.Interpreter
-                      Vish.Data.App
+                      Vish.Application.Data.App
+                      Vish.Application.App
                       Vish.Application.Window
                       Vish.Application.Data.Window
-                      Vish.Backend.App
-                      Vish.Backend.Types
-                      Vish.Backend.GLUT
                       Vish.Graphics.Picture
                       Vish.Graphics.Data.Picture
                       Vish.Graphics.Texture
                       Vish.Graphics.Data.Texture
                       Vish.Graphics.Util
+
+  Other-modules:      Vish.Application.Backend
+                      Vish.Application.Backend.Types
+
+  If flag(GLUT)
+    Build-Depends:    GLUT (==2.7.*)
+    CPP-Options:      -DWITHGLUT
+    Other-modules:    Vish.Application.Backend.GLUT
+
+  If flag(GLFW)
+    Build-Depends:    GLFW-b >= 0.1.4.1 && < 0.2
+    CPP-Options:      -DWITHGLFW
+    Other-modules:    Vish.Application.Backend.GLFW
+
 
 executable TestGame
   main-is:            TestGame.hs

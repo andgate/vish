@@ -1,6 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Vish.Backend.Types where
+module Vish.Application.Backend.Types where
 
 import Data.IORef
 import Vish.Application.Data.Window
@@ -34,22 +34,22 @@ class Backend a where
         dumpBackendState           :: IORef a -> IO ()
 
         -- | Install the display callbacks.
-        installDisplayCallback     :: IORef a -> [Callback] -> IO ()
+        installDisplayCallback     :: IORef a -> Callbacks -> IO ()
 
         -- | Install the window close callback.
         installWindowCloseCallback :: IORef a -> IO ()
 
         -- | Install the reshape callbacks.
-        installReshapeCallback     :: IORef a -> [Callback] -> IO ()
+        installReshapeCallback     :: IORef a -> Callbacks -> IO ()
 
         -- | Install the keymouse press callbacks.
-        installKeyMouseCallback    :: IORef a -> [Callback] -> IO ()
+        installKeyMouseCallback    :: IORef a -> Callbacks -> IO ()
 
         -- | Install the mouse motion callbacks.
-        installMotionCallback      :: IORef a -> [Callback] -> IO ()
+        installMotionCallback      :: IORef a -> Callbacks -> IO ()
 
         -- | Install the idle callbacks.
-        installIdleCallback        :: IORef a -> [Callback] -> IO ()
+        installIdleCallback        :: IORef a -> Callbacks -> IO ()
 
         -- | The mainloop of the backend.
         runMainLoop                :: IORef a -> IO ()
@@ -75,6 +75,8 @@ class Backend a where
 -- | Display callback has no arguments.
 type DisplayCallback       = forall a . Backend a => IORef a -> IO ()
 
+type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
+
 -- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
 type KeyboardMouseCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> (Int,Int) -> IO ()
 
@@ -87,13 +89,22 @@ type IdleCallback          = forall a . Backend a => IORef a -> IO ()
 -- | Arguments: (Width,Height) in pixels.
 type ReshapeCallback       = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
 
-
 data Callback
         = Display  DisplayCallback
         | KeyMouse KeyboardMouseCallback
         | Idle     IdleCallback
         | Motion   MotionCallback
         | Reshape  ReshapeCallback
+
+
+data Callbacks = Callbacks
+  { displayCallback :: DisplayCallback
+  , closeCallback :: CloseCallBack
+  , reshapeCallback :: ReshapeCallback
+  , motionCallback :: MotionCallback
+  , keyboardMouseCallback :: KeyboardMouseCallback
+  , idleCallback :: IdleCallback
+  }
 
 -------------------------------------------------------------------------------
 -- This is Glosses view of mouse and keyboard events.

@@ -3,8 +3,8 @@ module Vish where
 import Control.Lens
 
 import Vish.Script
-import Vish.Backend.App
-import Vish.Data.App
+import Vish.Application.App
+import Vish.Application.Data.App
 
 import Vish.Graphics.Data.Picture (Picture)
 import qualified Vish.Graphics.Data.Picture as Pic

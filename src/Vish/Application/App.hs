@@ -1,6 +1,6 @@
-module Vish.Backend.App where
+module Vish.Application.App where
 
-import           Vish.Data.App
+import           Vish.Application.Data.App
 
 import           Graphics.Rendering.OpenGL    (get, ($=))
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -8,14 +8,19 @@ import qualified Graphics.UI.GLUT             as GLUT
 
 import           Control.Lens
 
+import           Vish.Application.Backend
 import           Vish.Graphics.Picture
 import           Vish.Graphics.Util
 
 import           Data.IORef
 import           System.Mem
 
+
 play :: AppListener w => w -> IO ()
-play world = do
+play = playWithBackend defaultBackendState
+
+playWithBackend :: (Backend b, AppListener w) => b -> w -> IO ()
+playWithBackend backend world = do
   (_progname, _args) <- GLUT.getArgsAndInitialize
   GLUT.initialDisplayMode $= [ GLUT.DoubleBuffered]
   GLUT.initialWindowSize $=
