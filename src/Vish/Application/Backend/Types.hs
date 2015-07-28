@@ -75,27 +75,20 @@ class Backend a where
 -- | Display callback has no arguments.
 type DisplayCallback       = forall a . Backend a => IORef a -> IO ()
 
+-- | Close callback has no arguments.
 type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
-
--- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
-type KeyboardMouseCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> (Int,Int) -> IO ()
-
--- | Arguments: (PosX,PosY) in pixels.
-type MotionCallback        = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
-
--- | No arguments.
-type IdleCallback          = forall a . Backend a => IORef a -> IO ()
 
 -- | Arguments: (Width,Height) in pixels.
 type ReshapeCallback       = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
 
-data Callback
-        = Display  DisplayCallback
-        | KeyMouse KeyboardMouseCallback
-        | Idle     IdleCallback
-        | Motion   MotionCallback
-        | Reshape  ReshapeCallback
+-- | Arguments: (PosX,PosY) in pixels.
+type MotionCallback        = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
 
+-- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
+type KeyboardMouseCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> (Int,Int) -> IO ()
+
+-- | No arguments.
+type IdleCallback          = forall a . Backend a => IORef a -> IO ()
 
 data Callbacks = Callbacks
   { displayCallback :: DisplayCallback

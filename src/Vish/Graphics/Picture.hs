@@ -5,7 +5,11 @@ import Vish.Graphics.Texture
 import Vish.Graphics.Data.Texture
 import Vish.Graphics.Util
 
-import qualified Graphics.Rendering.OpenGL.GL           as GL
+import qualified Graphics.Rendering.OpenGL.GL as GL
+
+displayPicture :: TexCache -> Picture -> IO ()
+displayPicture texCache pic =
+  withModelview (640, 480) $ drawPicture texCache pic
 
 drawPicture :: TexCache -> Picture -> IO ()
 drawPicture texCache picture =
