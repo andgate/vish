@@ -67,7 +67,7 @@ library
                       Vish.Application.Window
                       Vish.Backend.App
                       Vish.Backend.Types
-                      Vish.Backend.GLFW
+                      Vish.Backend.GLUT
                       Vish.Graphics.Picture
                       Vish.Graphics.Data.Picture
                       Vish.Graphics.Texture
