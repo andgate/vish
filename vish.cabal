@@ -37,6 +37,7 @@ library
                       , attoparsec >= 0.1 && < 1
                       , hashtables >= 1.1 && < 2
                       , free >= 4 && < 5
+                      , GLUT (==2.7.*)
                       , OpenGL (==2.12.*)
                       , JuicyPixels >= 3 && < 4
                       , vector >= 0.10 && < 1
@@ -46,6 +47,7 @@ library
                       , safe >= 0.3 && < 0.4
                       , regex-tdfa >= 1.2 && < 2
                       , lens >= 4.0 && < 5
+                      , GLFW-b >= 1.4 && < 2
 
   default-extensions: OverloadedStrings
                       , UnicodeSyntax
@@ -84,12 +86,11 @@ library
                       Vish.Application.Backend.Types
 
   If flag(GLUT)
-    Build-Depends:    GLUT (==2.7.*)
     CPP-Options:      -DWITHGLUT
     Other-modules:    Vish.Application.Backend.GLUT
 
   If flag(GLFW)
-    Build-Depends:    GLFW-b >= 0.1.4.1 && < 0.2
+    Build-Depends:    GLFW-b >= 1.4 && < 2
     CPP-Options:      -DWITHGLFW
     Other-modules:    Vish.Application.Backend.GLFW
 

@@ -1,6 +1,10 @@
 {-# LANGUAGE Rank2Types #-}
 
-module Vish.Application.Backend.Types where
+module Vish.Application.Backend.Types
+  ( module Vish.Application.Backend.Types
+  , module Vish.Application.Data.Window
+  )
+where
 
 import Data.IORef
 import Vish.Application.Data.Window

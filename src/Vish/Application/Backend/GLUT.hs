@@ -1,7 +1,8 @@
-module Vish.Application.Backend.GLUT where
+module Vish.Application.Backend.GLUT
+  (GLUTState)
+where
 
 import Vish.Application.Backend.Types
-import Vish.Application.Data.Window
 
 import Control.Concurrent
 import Control.Lens
@@ -58,32 +59,24 @@ instance Backend GLUTState where
     liftM ((/ 1000) . fromIntegral) $ get GLUT.elapsedTime
 
   sleep _ sec =
-    threadDelay (round $ sec * 1000000)
+    threadDelay . round . (* 1000000)
 
 -- Initialise -----------------------------------------------------------------
-initGLUT
-        :: IORef GLUTState
-        -> Bool
-        -> IO ()
+initGLUT :: IORef GLUTState -> Bool -> IO ()
 
-initGLUT _ debug
- = do   (_progName, _args)  <- GLUT.getArgsAndInitialize
+initGLUT _ debug = do
+  (_progName, _args)  <- GLUT.getArgsAndInitialize
 
-        glutVersion         <- get GLUT.glutVersion
-        when debug
-         $ putStr  $ "  glutVersion        = " ++ show glutVersion   ++ "\n"
+  glutVersion         <- get GLUT.glutVersion
+  when debug . putStrLn $ "  glutVersion       = " ++ show glutVersion
 
-        GLUT.initialDisplayMode
-          $= [ GLUT.RGBMode
-             , GLUT.DoubleBuffered]
+  GLUT.initialDisplayMode $= [ GLUT.RGBMode, GLUT.DoubleBuffered]
 
-        -- See if our requested display mode is possible
-        displayMode         <- get GLUT.initialDisplayMode
-        displayModePossible <- get GLUT.displayModePossible
-        when debug
-         $ do putStr $  "  displayMode        = " ++ show displayMode ++ "\n"
-                     ++ "       possible      = " ++ show displayModePossible ++ "\n"
-                     ++ "\n"
+  -- See if our requested display mode is possible
+  displayMode         <- get GLUT.initialDisplayMode
+  displayModePossible <- get GLUT.displayModePossible
+  when debug . putStrLn $  "  displayMode       = " ++ show displayMode ++ "\n"
+                        ++ "  possible          = " ++ show displayModePossible ++ "\n"
 
 
 -- Open Window ----------------------------------------------------------------
