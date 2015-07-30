@@ -47,6 +47,8 @@ library
                       , safe >= 0.3 && < 0.4
                       , regex-tdfa >= 1.2 && < 2
                       , lens >= 4.0 && < 5
+                      , pretty >= 1.1 && < 1.2
+                      , transformers >= 0.4 && < 0.5
                       , GLFW-b >= 1.4 && < 2
 
   default-extensions: OverloadedStrings

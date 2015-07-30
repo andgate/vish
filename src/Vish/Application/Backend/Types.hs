@@ -41,7 +41,7 @@ class Backend a where
         installDisplayCallback     :: IORef a -> Callbacks -> IO ()
 
         -- | Install the window close callback.
-        installWindowCloseCallback :: IORef a -> IO ()
+        installWindowCloseCallback :: IORef a -> Callbacks -> IO ()
 
         -- | Install the reshape callbacks.
         installReshapeCallback     :: IORef a -> Callbacks -> IO ()

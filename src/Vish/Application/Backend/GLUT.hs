@@ -37,9 +37,7 @@ instance Backend GLUTState where
   dumpBackendState = dumpStateGLUT
   installDisplayCallback = installDisplayCallbackGLUT
 
-  -- We can ask for this in freeglut, but it doesn't seem to work :(.
-  -- (\_ -> GLUT.actionOnWindowClose $= GLUT.MainLoopReturns)
-  installWindowCloseCallback _ = return ()
+  installWindowCloseCallback = installWindowCloseCallbackGLUT
 
   installReshapeCallback = installReshapeCallbackGLUT
   installKeyMouseCallback = installKeyMouseCallbackGLUT
@@ -58,12 +56,11 @@ instance Backend GLUTState where
   elapsedTime _ =
     liftM ((/ 1000) . fromIntegral) $ get GLUT.elapsedTime
 
-  sleep _ sec =
+  sleep _ =
     threadDelay . round . (* 1000000)
 
 -- Initialise -----------------------------------------------------------------
 initGLUT :: IORef GLUTState -> Bool -> IO ()
-
 initGLUT _ debug = do
   (_progName, _args)  <- GLUT.getArgsAndInitialize
 
@@ -167,6 +164,12 @@ callbackDisplay ref callbacks = do
   -- The windows OpenGL implementation seems to complain for no reason.
   --  GLUT.reportErrors
 
+-- Close Callback -------------------------------------------------------------
+-- | Callback for when the user closes the window.
+--   We can do some cleanup here.
+installWindowCloseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installWindowCloseCallbackGLUT ref callbacks =
+  GLUT.closeCallback $= closeCallback callbacks ref
 
 
 -- Reshape Callback -----------------------------------------------------------
