@@ -16,7 +16,7 @@ import Vish.Application.Data.Window
 --   and closing the window, and managing key events etc.
 --
 --   It doesn't know anything about drawing lines or setting colors.
---   When we get a display callback, Gloss will perform OpenGL actions, and
+--   When we get a display callback, Vish will perform OpenGL actions, and
 --   the backend needs to have OpenGL in a state where it's able to accept them.
 --
 class Backend a where
@@ -105,7 +105,7 @@ data Callbacks = Callbacks
   }
 
 -------------------------------------------------------------------------------
--- This is Glosses view of mouse and keyboard events.
+-- This is Vish's view of mouse and keyboard events.
 -- The actual events provided by the backends are converted to this form
 -- by the backend module.
 

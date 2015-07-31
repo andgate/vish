@@ -1,5 +1,4 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Vish.Application.Backend.GLFW
   (GLFWState)
@@ -20,25 +19,8 @@ import Data.Maybe (catMaybes, fromMaybe)
 import Text.PrettyPrint
 import qualified System.Mem  as System
 
---import Graphics.UI.GLFW                    (WindowValue(..))
 import qualified Graphics.UI.GLFW          as GLFW
 import qualified Graphics.Rendering.OpenGL as GL
-
--- [Note: FreeGlut]
--- ~~~~~~~~~~~~~~~~
--- We use GLUT for font rendering.
---   On freeglut-based installations (usually linux) we need to explicitly
---   initialize GLUT before we can use any of it's functions.
---
----  We also need to deinitialize (exit) GLUT when we close the GLFW
---   window, otherwise opening a gloss window again from GHCi will crash.
---   For the OS X and Windows version of GLUT there are no such restrictions.
---
---   We assume also assume that only linux installations use freeglut.
---
-#ifdef linux_HOST_OS
-import qualified Graphics.UI.GLUT          as GLUT
-#endif
 
 -- | State of the GLFW backend library.
 data GLFWState
@@ -111,12 +93,6 @@ initializeGLFW :: IORef GLFWState -> Bool-> IO ()
 initializeGLFW _ debug = do
   GLFW.init
   glfwVersion <- GLFW.getVersion
-
-#ifdef linux_HOST_OS
--- See [Note: FreeGlut] for why we need this.
-  (_progName, _args)  <- GLUT.getArgsAndInitialize
-#endif
-
   when debug . putStrLn  $ "  glfwVersion        = " ++ show glfwVersion
 
 
@@ -124,10 +100,6 @@ initializeGLFW _ debug = do
 -- | Tell the GLFW backend to close the window and exit.
 exitGLFW :: IORef GLFWState -> IO ()
 exitGLFW ref = do
-#ifdef linux_HOST_OS
--- See [Note: FreeGlut] on why we exit GLUT for Linux
-  GLUT.exit
-#endif
   glfwState <- readIORef ref
   maybe (return ()) GLFW.destroyWindow (glfwState ^. glfwWindow)
   GLFW.terminate
@@ -294,13 +266,8 @@ installWindowCloseCallbackGLFW ref callbacks =
     GLFW.setWindowCloseCallback glfwWin $ Just (windowCloseCallback ref callbacks)
 
 windowCloseCallback :: IORef GLFWState -> Callbacks -> GLFW.Window -> IO ()
-windowCloseCallback ref callbacks glfwWin = do
+windowCloseCallback ref callbacks _ =
   closeCallback callbacks ref
-#ifdef linux_HOST_OS
--- See [Note: FreeGlut] for why we need this.
-  GLUT.exit
-#endif
-
 
 -- Reshape --------------------------------------------------------------------
 -- | Callback for when the user reshapes the window.
@@ -355,8 +322,8 @@ setModifiers ref key keystate =
 
 -- GLFW calls this on a when the user presses or releases a character key.
 callbackChar :: IORef GLFWState -> Callbacks -> GLFW.Window -> Char -> IO ()
-callbackChar ref callbacks _ char = do
-  let key'      = charToSpecial char
+callbackChar ref callbacks _ c = do
+  let key'      = charToSpecial c
   (mods, pos) <- readIORef ref >>= \s -> return (s^.modifiers, s^.mousePosition)
   keyboardMouseCallback callbacks ref key' Down mods pos
 
@@ -560,31 +527,32 @@ instance GLFWConv GLFW.Key Key where
 --   GLFW 2.7 is current as of Nov 2011, and is shipped with the Hackage
 --   binding GLFW-b 0.2.*
 charToSpecial :: Char -> Key
-charToSpecial c = case (fromEnum c) of
-        32    -> SpecialKey KeySpace
-        63232 -> SpecialKey KeyUp
-        63233 -> SpecialKey KeyDown
-        63234 -> SpecialKey KeyLeft
-        63235 -> SpecialKey KeyRight
-        63236 -> SpecialKey KeyF1
-        63237 -> SpecialKey KeyF2
-        63238 -> SpecialKey KeyF3
-        63239 -> SpecialKey KeyF4
-        63240 -> SpecialKey KeyF5
-        63241 -> SpecialKey KeyF6
-        63242 -> SpecialKey KeyF7
-        63243 -> SpecialKey KeyF8
-        63244 -> SpecialKey KeyF9
-        63245 -> SpecialKey KeyF10
-        63246 -> SpecialKey KeyF11
-        63247 -> SpecialKey KeyF12
-        63248 -> SpecialKey KeyF13
-        63272 -> SpecialKey KeyDelete
-        63273 -> SpecialKey KeyHome
-        63275 -> SpecialKey KeyEnd
-        63276 -> SpecialKey KeyPageUp
-        63277 -> SpecialKey KeyPageDown
-        _     -> Char c
+charToSpecial c =
+  case fromEnum c of
+    32    -> SpecialKey KeySpace
+    63232 -> SpecialKey KeyUp
+    63233 -> SpecialKey KeyDown
+    63234 -> SpecialKey KeyLeft
+    63235 -> SpecialKey KeyRight
+    63236 -> SpecialKey KeyF1
+    63237 -> SpecialKey KeyF2
+    63238 -> SpecialKey KeyF3
+    63239 -> SpecialKey KeyF4
+    63240 -> SpecialKey KeyF5
+    63241 -> SpecialKey KeyF6
+    63242 -> SpecialKey KeyF7
+    63243 -> SpecialKey KeyF8
+    63244 -> SpecialKey KeyF9
+    63245 -> SpecialKey KeyF10
+    63246 -> SpecialKey KeyF11
+    63247 -> SpecialKey KeyF12
+    63248 -> SpecialKey KeyF13
+    63272 -> SpecialKey KeyDelete
+    63273 -> SpecialKey KeyHome
+    63275 -> SpecialKey KeyEnd
+    63276 -> SpecialKey KeyPageUp
+    63277 -> SpecialKey KeyPageDown
+    _     -> Char c
 
 instance GLFWConv GLFW.MouseButton Key where
   fromGLFW mouse
