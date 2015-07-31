@@ -51,7 +51,7 @@ instance Backend GLUTState where
 
   getWindowDimensions _ = do
     GL.Size sizeX sizeY <- get GLUT.windowSize
-    return (fromEnum sizeX, fromEnum sizeY)
+    return . Just $ (fromEnum sizeX, fromEnum sizeY)
 
   elapsedTime _ =
     liftM ((/ 1000) . fromIntegral) $ get GLUT.elapsedTime

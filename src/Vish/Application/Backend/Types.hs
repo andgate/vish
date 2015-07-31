@@ -7,6 +7,7 @@ module Vish.Application.Backend.Types
 where
 
 import Data.IORef
+import Control.Lens
 import Vish.Application.Data.Window
 
 -- | The functions every backend window managed backend needs to support.
@@ -62,7 +63,7 @@ class Backend a where
         postRedisplay              :: IORef a -> IO ()
 
         -- | Function that returns (width,height) of the window in pixels.
-        getWindowDimensions        :: IORef a -> IO (Int,Int)
+        getWindowDimensions        :: IORef a -> IO (Maybe (Int,Int))
 
         -- | Function that reports the time elapsed since the application started.
         --   (in seconds)
@@ -86,10 +87,10 @@ type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
 type ReshapeCallback       = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
 
 -- | Arguments: (PosX,PosY) in pixels.
-type MotionCallback        = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
+type MotionCallback        = forall a . Backend a => IORef a -> (Double,Double) -> IO ()
 
 -- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
-type KeyboardMouseCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> (Int,Int) -> IO ()
+type KeyboardMouseCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> (Double,Double) -> IO ()
 
 -- | No arguments.
 type IdleCallback          = forall a . Backend a => IORef a -> IO ()
@@ -199,8 +200,10 @@ data SpecialKey
 
 data Modifiers
         = Modifiers
-        { shift :: KeyState
-        , ctrl  :: KeyState
-        , alt   :: KeyState
+        { _shift :: KeyState
+        , _ctrl  :: KeyState
+        , _alt   :: KeyState
         }
         deriving (Show, Eq, Ord)
+
+makeLenses ''Modifiers
