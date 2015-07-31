@@ -446,63 +446,63 @@ instance GLFWKey GLFW.Key where
   fromGLFW key
    = case key of
         GLFW.CharKey c      -> charToSpecial (toLower c)
-        GLFW.KeySpace       -> SpecialKey KeySpace
-        GLFW.KeyEsc         -> SpecialKey KeyEsc
-        GLFW.KeyF1          -> SpecialKey KeyF1
-        GLFW.KeyF2          -> SpecialKey KeyF2
-        GLFW.KeyF3          -> SpecialKey KeyF3
-        GLFW.KeyF4          -> SpecialKey KeyF4
-        GLFW.KeyF5          -> SpecialKey KeyF5
-        GLFW.KeyF6          -> SpecialKey KeyF6
-        GLFW.KeyF7          -> SpecialKey KeyF7
-        GLFW.KeyF8          -> SpecialKey KeyF8
-        GLFW.KeyF9          -> SpecialKey KeyF9
-        GLFW.KeyF10         -> SpecialKey KeyF10
-        GLFW.KeyF11         -> SpecialKey KeyF11
-        GLFW.KeyF12         -> SpecialKey KeyF12
-        GLFW.KeyF13         -> SpecialKey KeyF13
-        GLFW.KeyF14         -> SpecialKey KeyF14
-        GLFW.KeyF15         -> SpecialKey KeyF15
-        GLFW.KeyF16         -> SpecialKey KeyF16
-        GLFW.KeyF17         -> SpecialKey KeyF17
-        GLFW.KeyF18         -> SpecialKey KeyF18
-        GLFW.KeyF19         -> SpecialKey KeyF19
-        GLFW.KeyF20         -> SpecialKey KeyF20
-        GLFW.KeyF21         -> SpecialKey KeyF21
-        GLFW.KeyF22         -> SpecialKey KeyF22
-        GLFW.KeyF23         -> SpecialKey KeyF23
-        GLFW.KeyF24         -> SpecialKey KeyF24
-        GLFW.KeyF25         -> SpecialKey KeyF25
-        GLFW.KeyUp          -> SpecialKey KeyUp
-        GLFW.KeyDown        -> SpecialKey KeyDown
-        GLFW.KeyLeft        -> SpecialKey KeyLeft
-        GLFW.KeyRight       -> SpecialKey KeyRight
-        GLFW.KeyTab         -> SpecialKey KeyTab
-        GLFW.KeyEnter       -> SpecialKey KeyEnter
-        GLFW.KeyBackspace   -> SpecialKey KeyBackspace
-        GLFW.KeyInsert      -> SpecialKey KeyInsert
-        GLFW.KeyDel         -> SpecialKey KeyDelete
-        GLFW.KeyPageup      -> SpecialKey KeyPageUp
-        GLFW.KeyPagedown    -> SpecialKey KeyPageDown
-        GLFW.KeyHome        -> SpecialKey KeyHome
-        GLFW.KeyEnd         -> SpecialKey KeyEnd
-        GLFW.KeyPad0        -> SpecialKey KeyPad0
-        GLFW.KeyPad1        -> SpecialKey KeyPad1
-        GLFW.KeyPad2        -> SpecialKey KeyPad2
-        GLFW.KeyPad3        -> SpecialKey KeyPad3
-        GLFW.KeyPad4        -> SpecialKey KeyPad4
-        GLFW.KeyPad5        -> SpecialKey KeyPad5
-        GLFW.KeyPad6        -> SpecialKey KeyPad6
-        GLFW.KeyPad7        -> SpecialKey KeyPad7
-        GLFW.KeyPad8        -> SpecialKey KeyPad8
-        GLFW.KeyPad9        -> SpecialKey KeyPad9
-        GLFW.KeyPadDivide   -> SpecialKey KeyPadDivide
-        GLFW.KeyPadMultiply -> SpecialKey KeyPadMultiply
-        GLFW.KeyPadSubtract -> SpecialKey KeyPadSubtract
-        GLFW.KeyPadAdd      -> SpecialKey KeyPadAdd
-        GLFW.KeyPadDecimal  -> SpecialKey KeyPadDecimal
-        GLFW.KeyPadEqual    -> Char '='
-        GLFW.KeyPadEnter    -> SpecialKey KeyPadEnter
+        GLFW.Key'Space       -> SpecialKey KeySpace
+        GLFW.Key'Escape      -> SpecialKey KeyEsc
+        GLFW.Key'F1          -> SpecialKey KeyF1
+        GLFW.Key'F2          -> SpecialKey KeyF2
+        GLFW.Key'F3          -> SpecialKey KeyF3
+        GLFW.Key'F4          -> SpecialKey KeyF4
+        GLFW.Key'F5          -> SpecialKey KeyF5
+        GLFW.Key'F6          -> SpecialKey KeyF6
+        GLFW.Key'F7          -> SpecialKey KeyF7
+        GLFW.Key'F8          -> SpecialKey KeyF8
+        GLFW.Key'F9          -> SpecialKey KeyF9
+        GLFW.Key'F10         -> SpecialKey KeyF10
+        GLFW.Key'F11         -> SpecialKey KeyF11
+        GLFW.Key'F12         -> SpecialKey KeyF12
+        GLFW.Key'F13         -> SpecialKey KeyF13
+        GLFW.Key'F14         -> SpecialKey KeyF14
+        GLFW.Key'F15         -> SpecialKey KeyF15
+        GLFW.Key'F16         -> SpecialKey KeyF16
+        GLFW.Key'F17         -> SpecialKey KeyF17
+        GLFW.Key'F18         -> SpecialKey KeyF18
+        GLFW.Key'F19         -> SpecialKey KeyF19
+        GLFW.Key'F20         -> SpecialKey KeyF20
+        GLFW.Key'F21         -> SpecialKey KeyF21
+        GLFW.Key'F22         -> SpecialKey KeyF22
+        GLFW.Key'F23         -> SpecialKey KeyF23
+        GLFW.Key'F24         -> SpecialKey KeyF24
+        GLFW.Key'F25         -> SpecialKey KeyF25
+        GLFW.Key'Up          -> SpecialKey KeyUp
+        GLFW.Key'Down        -> SpecialKey KeyDown
+        GLFW.Key'Left        -> SpecialKey KeyLeft
+        GLFW.Key'Right       -> SpecialKey KeyRight
+        GLFW.Key'Tab         -> SpecialKey KeyTab
+        GLFW.Key'Enter       -> SpecialKey KeyEnter
+        GLFW.Key'Backspace   -> SpecialKey KeyBackspace
+        GLFW.Key'Insert      -> SpecialKey KeyInsert
+        GLFW.Key'Del         -> SpecialKey KeyDelete
+        GLFW.Key'Pageup      -> SpecialKey KeyPageUp
+        GLFW.Key'Pagedown    -> SpecialKey KeyPageDown
+        GLFW.Key'Home        -> SpecialKey KeyHome
+        GLFW.Key'End         -> SpecialKey KeyEnd
+        GLFW.Key'Pad0        -> SpecialKey KeyPad0
+        GLFW.Key'Pad1        -> SpecialKey KeyPad1
+        GLFW.Key'Pad2        -> SpecialKey KeyPad2
+        GLFW.Key'Pad3        -> SpecialKey KeyPad3
+        GLFW.Key'Pad4        -> SpecialKey KeyPad4
+        GLFW.Key'Pad5        -> SpecialKey KeyPad5
+        GLFW.Key'Pad6        -> SpecialKey KeyPad6
+        GLFW.Key'Pad7        -> SpecialKey KeyPad7
+        GLFW.Key'Pad8        -> SpecialKey KeyPad8
+        GLFW.Key'Pad9        -> SpecialKey KeyPad9
+        GLFW.Key'PadDivide   -> SpecialKey KeyPadDivide
+        GLFW.Key'PadMultiply -> SpecialKey KeyPadMultiply
+        GLFW.Key'PadSubtract -> SpecialKey KeyPadSubtract
+        GLFW.Key'PadAdd      -> SpecialKey KeyPadAdd
+        GLFW.Key'PadDecimal  -> SpecialKey KeyPadDecimal
+        GLFW.Key'PadEqual    -> Char '='
+        GLFW.Key'PadEnter    -> SpecialKey KeyPadEnter
         _                   -> SpecialKey KeyUnknown
 
 
@@ -541,14 +541,14 @@ charToSpecial c = case (fromEnum c) of
 instance GLFWKey GLFW.MouseButton where
   fromGLFW mouse
    = case mouse of
-        GLFW.MouseButton0 -> MouseButton LeftButton
-        GLFW.MouseButton1 -> MouseButton RightButton
-        GLFW.MouseButton2 -> MouseButton MiddleButton
-        GLFW.MouseButton3 -> MouseButton $ AdditionalButton 3
-        GLFW.MouseButton4 -> MouseButton $ AdditionalButton 4
-        GLFW.MouseButton5 -> MouseButton $ AdditionalButton 5
-        GLFW.MouseButton6 -> MouseButton $ AdditionalButton 6
-        GLFW.MouseButton7 -> MouseButton $ AdditionalButton 7
+        GLFW.MouseButton'1 -> MouseButton LeftButton
+        GLFW.MouseButton'2 -> MouseButton RightButton
+        GLFW.MouseButton'3 -> MouseButton MiddleButton
+        GLFW.MouseButton'4 -> MouseButton $ AdditionalButton 3
+        GLFW.MouseButton'5 -> MouseButton $ AdditionalButton 4
+        GLFW.MouseButton'6 -> MouseButton $ AdditionalButton 5
+        GLFW.MouseButton'7 -> MouseButton $ AdditionalButton 6
+        GLFW.MouseButton'8 -> MouseButton $ AdditionalButton 7
 
 
 joysticks :: [GLFW.Joystick]

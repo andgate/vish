@@ -38,7 +38,7 @@ playWithBackend backend world = do
           _winH = 480,
           _winState = Windowed
         }
-
+        
   createWindow backend window callbacks
 
 displayUpdate :: (AppListener w, Backend b) => IORef (App w) -> IORef b -> GLUT.DisplayCallback

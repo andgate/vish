@@ -14,7 +14,7 @@ simpleScript = do
   pause 1.5
   done
 
-main :: IO ()
+main :: IO () 
 main = do
   printScript simpleScript
   print . validateActorMsg $ "*contemplate*Well, *happy*\\*happyface\\*it works!"

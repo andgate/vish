@@ -13,7 +13,7 @@ steps:
       # not already present. You may want to disable it if you configure
       # language extensions using some other method than pragmas. Default:
       # true.
-  #    add_language_pragma: false
+  #    add_language_pragma: true
 
   # Import cleanup
   - imports:
@@ -76,7 +76,7 @@ language_extensions:
   # - TemplateHaskell
   # - QuasiQuotes
   - OverloadedStrings
-  - UnicodeSyntax
+  #- UnicodeSyntax
   - PostfixOperators
   - TupleSections
   - PackageImports

@@ -169,7 +169,7 @@ callbackDisplay ref callbacks = do
 --   We can do some cleanup here.
 installWindowCloseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
 installWindowCloseCallbackGLUT ref callbacks =
-  GLUT.closeCallback $= closeCallback callbacks ref
+  GLUT.closeCallback $= (Just $ closeCallback callbacks ref)
 
 
 -- Reshape Callback -----------------------------------------------------------

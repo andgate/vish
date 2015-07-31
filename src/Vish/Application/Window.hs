@@ -13,33 +13,34 @@ createWindow :: Backend b => b -> Window -> Callbacks -> IO ()
 createWindow backend window callbacks = do
   let debug = False
 
-  backendStateRef <- newIORef backend
+  ref <- newIORef backend
   when debug . putStrLn $ "* displayInWindow"
 
-  initializeBackend backendStateRef debug
+  initializeBackend ref debug
   when debug . putStrLn $ "* c window\n"
 
-  openWindow backendStateRef window
+  openWindow ref window
+  dumpBackendState ref
 
-  installDisplayCallback     backendStateRef callbacks
-  installWindowCloseCallback backendStateRef
-  installReshapeCallback     backendStateRef callbacks
-  installKeyMouseCallback    backendStateRef callbacks
-  installMotionCallback      backendStateRef callbacks
-  installIdleCallback        backendStateRef callbacks
+  installDisplayCallback     ref callbacks
+  installWindowCloseCallback ref callbacks
+  installReshapeCallback     ref callbacks
+  installKeyMouseCallback    ref callbacks
+  installMotionCallback      ref callbacks
+  installIdleCallback        ref callbacks
 
   GL.depthFunc $= Just GL.Always
   --GL.clearColor   $= glColor4OfColor clearColor
 
   -- Dump some debugging info
   when debug $ do
-    dumpBackendState backendStateRef
+    dumpBackendState ref
     -- Not implemented
     --dumpFramebufferState
     --dumpFragmentState
 
   when debug . putStrLn $ "* entering mainloop.."
 
-  runMainLoop backendStateRef
+  runMainLoop ref
 
   when debug . putStrLn $ "* all done"
