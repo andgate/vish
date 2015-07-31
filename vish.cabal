@@ -70,15 +70,16 @@ library
 
   hs-source-dirs:     src
 
-  exposed-modules:    Vish
+  exposed-modules:    Vish.Game
                       Vish.Util
                       Vish.Script
                       Vish.Interpreter
                       Vish.Application.Data.App
                       Vish.Application.App
-                      Vish.Application.Window
                       Vish.Application.Data.Window
+                      Vish.Application.Window
                       Vish.Application.Data.Input
+                      Vish.Application.Input
                       Vish.Graphics.Picture
                       Vish.Graphics.Data.Picture
                       Vish.Graphics.Texture

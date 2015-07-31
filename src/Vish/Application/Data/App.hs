@@ -8,9 +8,13 @@ import Vish.Graphics.Texture
 
 class AppListener w where
   appStart :: App w -> IO (App w)
+  appStart = return
   appUpdate :: App w -> IO (App w)
+  appUpdate = return
   appDraw :: App w -> IO (Picture, App w)
+  appDraw = return . (blank,)
   appPostUpdate :: App w -> IO (App w)
+  appPostUpdate = return
 
 data App w = App
   { _appGfx :: Gfx,
