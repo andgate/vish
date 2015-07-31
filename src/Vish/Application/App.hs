@@ -22,13 +22,11 @@ playWithBackend backend world = do
   app <- appStart =<< mkApp world
   appRef <- newIORef app
 
-  let callbacks = Callbacks
+  let callbacks = defaultCallbacks
         { displayCallback = displayUpdate appRef
-        , closeCallback = \_ -> return ()
-        , reshapeCallback = \_ _ -> return ()
-        , motionCallback = \_ _ -> return ()
-        , keyboardMouseCallback = \_ _ _ _ _ -> return ()
-        , idleCallback = \_ -> return ()
+        , keyboardCallback = printKey
+        , mouseButtonCallback = printMouseButton
+        , scrollCallback = printScroll
         }
       window = Window
         { _winName = "Blank",
@@ -38,7 +36,7 @@ playWithBackend backend world = do
           _winH = 480,
           _winState = Windowed
         }
-        
+
   createWindow backend window callbacks
 
 displayUpdate :: (AppListener w, Backend b) => IORef (App w) -> IORef b -> GLUT.DisplayCallback
@@ -50,3 +48,15 @@ displayUpdate appRef backendStateRef = do
   displayPicture texCache pic
 
   appPostUpdate app' >>= writeIORef appRef
+
+printKey :: Backend a => IORef a -> Key -> KeyState -> Modifiers -> IO ()
+printKey _ key keystate _ =
+  putStrLn $ show key ++ ": " ++ show keystate
+
+printMouseButton :: Backend a => IORef a -> MouseButton -> KeyState -> Modifiers -> IO ()
+printMouseButton _ button keystate _ =
+  putStrLn $ show button ++ ": " ++ show keystate
+
+printScroll :: Backend a => IORef a -> Double -> Double -> IO ()
+printScroll _ x y =
+  putStrLn $ "Scroll: " ++ show (x,y)

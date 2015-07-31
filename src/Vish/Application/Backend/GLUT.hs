@@ -126,7 +126,7 @@ dumpStateGLUT _
         colorMask       <- get GLUT.colorMask
         depthMask       <- get GLUT.depthMask
 
-        putStr  $  "* dumpGlutState\n"
+        putStrLn $ "* dumpGlutState\n"
                 ++ "  windowBorderWidth  = " ++ show wbw            ++ "\n"
                 ++ "  windowHeaderHeight = " ++ show whh            ++ "\n"
                 ++ "  rgba               = " ++ show rgba           ++ "\n"
@@ -138,7 +138,6 @@ dumpStateGLUT _
                 ++ "  doubleBuffered     = " ++ show doubleBuffered ++ "\n"
                 ++ "  mask         color = " ++ show colorMask      ++ "\n"
                 ++ "               depth = " ++ show depthMask      ++ "\n"
-                ++ "\n"
 
 -- Display Callback -----------------------------------------------------------
 installDisplayCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()

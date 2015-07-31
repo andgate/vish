@@ -22,12 +22,7 @@ createWindow backend window callbacks = do
   openWindow ref window
   dumpBackendState ref
 
-  installDisplayCallback     ref callbacks
-  installWindowCloseCallback ref callbacks
-  installReshapeCallback     ref callbacks
-  installKeyMouseCallback    ref callbacks
-  installMotionCallback      ref callbacks
-  installIdleCallback        ref callbacks
+  installCallbacks ref callbacks
 
   GL.depthFunc $= Just GL.Always
   --GL.clearColor   $= glColor4OfColor clearColor

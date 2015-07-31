@@ -3,12 +3,16 @@
 module Vish.Application.Backend.Types
   ( module Vish.Application.Backend.Types
   , module Vish.Application.Data.Window
+  , module Vish.Application.Data.Input
   )
 where
 
-import Data.IORef
-import Control.Lens
+
 import Vish.Application.Data.Window
+import Vish.Application.Data.Input
+
+import Control.Lens
+import Data.IORef
 
 -- | The functions every backend window managed backend needs to support.
 --
@@ -39,22 +43,7 @@ class Backend a where
         dumpBackendState           :: IORef a -> IO ()
 
         -- | Install the display callbacks.
-        installDisplayCallback     :: IORef a -> Callbacks -> IO ()
-
-        -- | Install the window close callback.
-        installWindowCloseCallback :: IORef a -> Callbacks -> IO ()
-
-        -- | Install the reshape callbacks.
-        installReshapeCallback     :: IORef a -> Callbacks -> IO ()
-
-        -- | Install the keymouse press callbacks.
-        installKeyMouseCallback    :: IORef a -> Callbacks -> IO ()
-
-        -- | Install the mouse motion callbacks.
-        installMotionCallback      :: IORef a -> Callbacks -> IO ()
-
-        -- | Install the idle callbacks.
-        installIdleCallback        :: IORef a -> Callbacks -> IO ()
+        installCallbacks           :: IORef a -> Callbacks -> IO ()
 
         -- | The mainloop of the backend.
         runMainLoop                :: IORef a -> IO ()
@@ -80,130 +69,71 @@ class Backend a where
 -- | Display callback has no arguments.
 type DisplayCallback       = forall a . Backend a => IORef a -> IO ()
 
+-- | No arguments.
+type IdleCallback          = forall a . Backend a => IORef a -> IO ()
+
 -- | Close callback has no arguments.
 type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
 
 -- | Arguments: (Width,Height) in pixels.
 type ReshapeCallback       = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
 
+-- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed
+type KeyboardCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> IO ()
+
 -- | Arguments: (PosX,PosY) in pixels.
-type MotionCallback        = forall a . Backend a => IORef a -> (Double,Double) -> IO ()
+type MouseMoveCallback        = forall a . Backend a => IORef a -> (Double,Double) -> IO ()
 
--- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
-type KeyboardMouseCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> (Double,Double) -> IO ()
+-- | Arguments: Mouse button, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
+type MouseButtonCallback = forall a . Backend a => IORef a -> MouseButton -> KeyState -> Modifiers -> IO ()
 
--- | No arguments.
-type IdleCallback          = forall a . Backend a => IORef a -> IO ()
+-- | Arguments: (ScrollX, ScrollY)
+type ScrollCallback = forall a. Backend a => IORef a -> Double -> Double -> IO ()
 
 data Callbacks = Callbacks
   { displayCallback :: DisplayCallback
+  , idleCallback :: IdleCallback
   , closeCallback :: CloseCallBack
   , reshapeCallback :: ReshapeCallback
-  , motionCallback :: MotionCallback
-  , keyboardMouseCallback :: KeyboardMouseCallback
-  , idleCallback :: IdleCallback
+  , keyboardCallback :: KeyboardCallback
+  , mouseMoveCallback :: MouseMoveCallback
+  , mouseButtonCallback :: MouseButtonCallback
+  , scrollCallback :: ScrollCallback
   }
 
--------------------------------------------------------------------------------
--- This is Vish's view of mouse and keyboard events.
--- The actual events provided by the backends are converted to this form
--- by the backend module.
+defaultCallbacks :: Callbacks
+defaultCallbacks =
+  Callbacks
+  { displayCallback     = defaultDisplayCallback
+  , idleCallback        = defaultIdleCallback
+  , closeCallback       = defaultCloseCallback
+  , reshapeCallback     = defaultReshapeCallback
+  , keyboardCallback    = defaultKeyboardCallback
+  , mouseMoveCallback   = defaultMouseMoveCallback
+  , mouseButtonCallback = defaultMouseButtonCallback
+  , scrollCallback      = defaultScrollCallback
+  }
 
-data Key
-        = Char        Char
-        | SpecialKey  SpecialKey
-        | MouseButton MouseButton
-        deriving (Show, Eq, Ord)
+defaultDisplayCallback :: DisplayCallback
+defaultDisplayCallback _ = return ()
 
-data MouseButton
-        = LeftButton
-        | MiddleButton
-        | RightButton
-        | WheelUp
-        | WheelDown
-        | AdditionalButton Int
-        deriving (Show, Eq, Ord)
+defaultIdleCallback :: IdleCallback
+defaultIdleCallback _ = return ()
 
-data KeyState
-        = Down
-        | Up
-        deriving (Show, Eq, Ord)
+defaultCloseCallback :: CloseCallBack
+defaultCloseCallback _ = return ()
 
-data SpecialKey
-        = KeyUnknown
-        | KeySpace
-        | KeyEsc
-        | KeyF1
-        | KeyF2
-        | KeyF3
-        | KeyF4
-        | KeyF5
-        | KeyF6
-        | KeyF7
-        | KeyF8
-        | KeyF9
-        | KeyF10
-        | KeyF11
-        | KeyF12
-        | KeyF13
-        | KeyF14
-        | KeyF15
-        | KeyF16
-        | KeyF17
-        | KeyF18
-        | KeyF19
-        | KeyF20
-        | KeyF21
-        | KeyF22
-        | KeyF23
-        | KeyF24
-        | KeyF25
-        | KeyUp
-        | KeyDown
-        | KeyLeft
-        | KeyRight
-        | KeyTab
-        | KeyEnter
-        | KeyBackspace
-        | KeyInsert
-        | KeyNumLock
-        | KeyBegin
-        | KeyDelete
-        | KeyPageUp
-        | KeyPageDown
-        | KeyHome
-        | KeyEnd
-        | KeyShiftL
-        | KeyShiftR
-        | KeyCtrlL
-        | KeyCtrlR
-        | KeyAltL
-        | KeyAltR
-        | KeyPad0
-        | KeyPad1
-        | KeyPad2
-        | KeyPad3
-        | KeyPad4
-        | KeyPad5
-        | KeyPad6
-        | KeyPad7
-        | KeyPad8
-        | KeyPad9
-        | KeyPadDivide
-        | KeyPadMultiply
-        | KeyPadSubtract
-        | KeyPadAdd
-        | KeyPadDecimal
-        | KeyPadEqual
-        | KeyPadEnter
-        deriving (Show, Eq, Ord)
+defaultReshapeCallback :: ReshapeCallback
+defaultReshapeCallback _ _ = return ()
 
-data Modifiers
-        = Modifiers
-        { _shift :: KeyState
-        , _ctrl  :: KeyState
-        , _alt   :: KeyState
-        }
-        deriving (Show, Eq, Ord)
+defaultKeyboardCallback :: KeyboardCallback
+defaultKeyboardCallback _ _ _ _ = return ()
 
-makeLenses ''Modifiers
+defaultMouseMoveCallback :: MouseMoveCallback
+defaultMouseMoveCallback _ _ = return ()
+
+defaultMouseButtonCallback :: MouseButtonCallback
+defaultMouseButtonCallback _ _ _ _ = return ()
+
+defaultScrollCallback :: ScrollCallback
+defaultScrollCallback _ _ _ = return ()
