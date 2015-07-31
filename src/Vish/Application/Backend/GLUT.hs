@@ -198,7 +198,7 @@ callbackKeyMouse ref callbacks
     key'       = glutKeyToKey key
     keyState'  = glutKeyStateToKeyState keystate
     modifiers' = glutModifiersToModifiers modifiers
-    pos        = (fromEnum posX, fromEnum posY)
+    pos        = (fromIntegral posX, fromIntegral posY)
 
 
 -- Motion Callback ------------------------------------------------------------
@@ -210,7 +210,7 @@ installMotionCallbackGLUT ref callbacks = do
 callbackMotion :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
 callbackMotion ref callbacks (GLUT.Position posX posY) =
   motionCallback callbacks ref pos
-  where pos = (fromEnum posX, fromEnum posY)
+  where pos = (fromIntegral posX, fromIntegral posY)
 
 
 -- Idle Callback --------------------------------------------------------------
