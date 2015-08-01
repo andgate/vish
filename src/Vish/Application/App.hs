@@ -25,10 +25,11 @@ playWithBackend backend world = do
   appRef <- newIORef app
 
   let callbacks = defaultCallbacks
-        { displayCallback = displayUpdate appRef
-        , keyboardCallback = updateKeyboardInput appRef
-        , mouseButtonCallback = printMouseButton
-        , scrollCallback = printScroll
+        { displayCallback     = displayUpdate appRef
+        , keyboardCallback    = updateKeyboardInput appRef
+        , mouseMoveCallback   = updateMouseMoveInput appRef
+        , mouseButtonCallback = updateMouseClickInput appRef
+        , scrollCallback      = updateScrolledInput appRef
         }
       window = Window
         { _winName = "Blank",
@@ -56,17 +57,12 @@ displayUpdate appRef backendStateRef = do
 data InputPrinter = InputPrinter
 
 instance InputListener InputPrinter where
-  keyDown _ key = print key
+  keyPressed _ key = print key
+  mouseButtonClicked _ button = print button
+  mouseMoved _ x y = putStrLn $ "Mouse Moved: " ++ show (x,y)
+  scrolled _ x y = putStrLn $ "Scrolled: " ++ show (x,y)
 
 registerInputListener :: InputListener l => IORef (App w) -> l -> IO ()
 registerInputListener appRef listener = do
   let reg = register listener
   modifyIORef appRef $ appInput.inputListeners %~ (reg:)
-
-printMouseButton :: Backend a => IORef a -> MouseButton -> KeyState -> Modifiers -> IO ()
-printMouseButton _ button keystate _ =
-  putStrLn $ show button ++ ": " ++ show keystate
-
-printScroll :: Backend a => IORef a -> Double -> Double -> IO ()
-printScroll _ x y =
-  putStrLn $ "Scroll: " ++ show (x,y)

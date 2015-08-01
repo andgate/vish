@@ -18,7 +18,9 @@ data MouseButton =
   | MiddleButton
   | RightButton
   | AdditionalButton Int
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Generic)
+
+instance Hashable MouseButton
 
 data Key =
     KeyUnknown

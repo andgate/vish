@@ -317,8 +317,8 @@ installMouseMoveCallbackGLFW ref callbacks =
 
 callbackMouseMove :: IORef GLFWState -> Callbacks -> GLFW.Window
                 -> Double -> Double -> IO ()
-callbackMouseMove ref callbacks _ x y =
-  mouseMoveCallback callbacks ref (x,y)
+callbackMouseMove ref callbacks _ =
+  mouseMoveCallback callbacks ref
 
 
 -- Mouse Button Callback ------------------------------------------------------

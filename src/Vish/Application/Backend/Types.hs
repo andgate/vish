@@ -82,7 +82,7 @@ type ReshapeCallback       = forall a . Backend a => IORef a -> (Int,Int) -> IO 
 type KeyboardCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> IO ()
 
 -- | Arguments: (PosX,PosY) in pixels.
-type MouseMoveCallback        = forall a . Backend a => IORef a -> (Double,Double) -> IO ()
+type MouseMoveCallback        = forall a . Backend a => IORef a -> Double -> Double -> IO ()
 
 -- | Arguments: Mouse button, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
 type MouseButtonCallback = forall a . Backend a => IORef a -> MouseButton -> KeyState -> Modifiers -> IO ()
@@ -130,7 +130,7 @@ defaultKeyboardCallback :: KeyboardCallback
 defaultKeyboardCallback _ _ _ _ = return ()
 
 defaultMouseMoveCallback :: MouseMoveCallback
-defaultMouseMoveCallback _ _ = return ()
+defaultMouseMoveCallback _ _ _ = return ()
 
 defaultMouseButtonCallback :: MouseButtonCallback
 defaultMouseButtonCallback _ _ _ _ = return ()
