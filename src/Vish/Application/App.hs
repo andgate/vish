@@ -1,7 +1,9 @@
 module Vish.Application.App where
 
 import           Vish.Application.Data.App
+import           Vish.Application.Data.Input
 import           Vish.Application.Data.Window
+import           Vish.Application.Input
 import           Vish.Application.Window
 import           Vish.Application.Backend
 import           Vish.Graphics.Picture
@@ -24,7 +26,7 @@ playWithBackend backend world = do
 
   let callbacks = defaultCallbacks
         { displayCallback = displayUpdate appRef
-        , keyboardCallback = printKey
+        , keyboardCallback = updateKeyboardInput appRef
         , mouseButtonCallback = printMouseButton
         , scrollCallback = printScroll
         }
@@ -36,6 +38,8 @@ playWithBackend backend world = do
           _winH = 480,
           _winState = Windowed
         }
+
+  registerInputListener appRef InputPrinter
 
   createWindow backend window callbacks
 
@@ -49,9 +53,15 @@ displayUpdate appRef backendStateRef = do
 
   appPostUpdate app' >>= writeIORef appRef
 
-printKey :: Backend a => IORef a -> Key -> KeyState -> Modifiers -> IO ()
-printKey _ key keystate _ =
-  putStrLn $ show key ++ ": " ++ show keystate
+data InputPrinter = InputPrinter
+
+instance InputListener InputPrinter where
+  keyDown _ key = print key
+
+registerInputListener :: InputListener l => IORef (App w) -> l -> IO ()
+registerInputListener appRef listener = do
+  let reg = register listener
+  modifyIORef appRef $ appInput.inputListeners %~ (reg:)
 
 printMouseButton :: Backend a => IORef a -> MouseButton -> KeyState -> Modifiers -> IO ()
 printMouseButton _ button keystate _ =

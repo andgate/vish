@@ -49,6 +49,7 @@ library
                       , lens >= 4.0 && < 5
                       , pretty >= 1.1 && < 1.2
                       , transformers >= 0.4 && < 0.5
+                      , hashable >= 1.2.3.3 && < 2
                       , GLFW-b >= 1.4 && < 2
 
   default-extensions: OverloadedStrings
@@ -88,6 +89,7 @@ library
 
   Other-modules:      Vish.Application.Backend
                       Vish.Application.Backend.Types
+                      Vish.Application.Data.InputPrims
 
   If flag(GLUT)
     CPP-Options:      -DWITHGLUT

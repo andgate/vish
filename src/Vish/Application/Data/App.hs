@@ -2,6 +2,8 @@ module Vish.Application.Data.App where
 
 import Control.Lens
 
+import Vish.Application.Data.Input (Input, mkInput)
+
 import Vish.Graphics.Data.Picture
 import Vish.Graphics.Data.Texture
 import Vish.Graphics.Texture
@@ -17,8 +19,9 @@ class AppListener w where
   appPostUpdate = return
 
 data App w = App
-  { _appGfx :: Gfx,
-    _appWorld :: w
+  { _appGfx :: Gfx
+  , _appInput :: Input
+  , _appWorld :: w
   }
 
 data Gfx = Gfx
@@ -31,7 +34,8 @@ makeLenses ''Gfx
 mkApp :: AppListener w => w -> IO (App w)
 mkApp world = do
   gfx <- mkGfx
-  return $ App gfx world
+  input <- mkInput
+  return $ App gfx input world
 
 mkGfx :: IO Gfx
 mkGfx = do
