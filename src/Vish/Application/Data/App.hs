@@ -1,6 +1,7 @@
 module Vish.Application.Data.App where
 
 import Control.Lens
+import Data.IORef
 
 import Vish.Application.Data.Input (Input, mkInput)
 
@@ -8,20 +9,37 @@ import Vish.Graphics.Data.Picture
 import Vish.Graphics.Data.Texture
 import Vish.Graphics.Texture
 
+type AppRef w = IORef (App w)
+
 class AppListener w where
-  appStart :: App w -> IO (App w)
-  appStart = return
-  appUpdate :: App w -> IO (App w)
-  appUpdate = return
-  appDraw :: App w -> IO (Picture, App w)
-  appDraw = return . (blank,)
-  appPostUpdate :: App w -> IO (App w)
-  appPostUpdate = return
+  appCreate :: AppRef w -> IO ()
+  appCreate _ = return ()
+
+  appResize :: AppRef w -> Int -> Int -> IO ()
+  appResize a _ _ = return ()
+
+  appUpdate :: AppRef w -> IO ()
+  appUpdate _ = return ()
+
+  appDraw :: AppRef w -> IO Picture
+  appDraw _ = return blank
+
+  appPostUpdate :: AppRef w -> IO ()
+  appPostUpdate _ = return ()
+
+  appPause :: AppRef w -> IO ()
+  appPause _ = return ()
+
+  appHide :: AppRef w -> IO ()
+  appHide _ = return ()
+
+  appDispose :: AppRef w -> IO ()
+  appDispose _ = return ()
 
 data App w = App
   { _appGfx :: Gfx
   , _appInput :: Input
-  , _appWorld :: w
+  , _appListener :: w
   }
 
 data Gfx = Gfx

@@ -17,7 +17,7 @@ updateButtonTable :: ButtonTable -> MouseButton -> KeyState -> IO ()
 updateButtonTable =
   H.insert
 
-updateKeyboardInput :: Backend a => IORef (App w) -> IORef a -> Key -> KeyState -> Modifiers -> IO ()
+updateKeyboardInput :: Backend a => AppRef w -> IORef a -> Key -> KeyState -> Modifiers -> IO ()
 updateKeyboardInput appRef _ key keystate mods = do
   input <- liftM (^.appInput) (readIORef appRef)
   updateKeyTable (input^.inputKeyTable) key keystate
@@ -29,13 +29,13 @@ updateKeyboardInput appRef _ key keystate mods = do
     Held ->
       mapM_ (\(MkInputListener a) -> keyHeld a key) (input^.inputListeners)
 
-updateMouseMoveInput :: Backend a => IORef (App w) -> IORef a
+updateMouseMoveInput :: Backend a => AppRef w -> IORef a
                         -> Double -> Double -> IO ()
 updateMouseMoveInput appRef _ moveX moveY = do
   listeners <- liftM (^.appInput.inputListeners) (readIORef appRef)
   mapM_ (\(MkInputListener a) -> mouseMoved a moveX moveY) listeners
 
-updateMouseClickInput :: Backend a => IORef (App w) -> IORef a
+updateMouseClickInput :: Backend a => AppRef w -> IORef a
                         -> MouseButton -> KeyState -> Modifiers -> IO ()
 updateMouseClickInput appRef _ button keystate mods = do
   input <- liftM (^.appInput) (readIORef appRef)
@@ -48,7 +48,7 @@ updateMouseClickInput appRef _ button keystate mods = do
     Held ->
       mapM_ (\(MkInputListener a) -> mouseButtonHeld a button) (input^.inputListeners)
 
-updateScrolledInput :: Backend a => IORef (App w) -> IORef a
+updateScrolledInput :: Backend a => AppRef w -> IORef a
                         -> Double -> Double -> IO ()
 updateScrolledInput appRef _ scrollX scrollY = do
   listeners <- liftM (^.appInput.inputListeners) (readIORef appRef)

@@ -286,8 +286,8 @@ installReshapeCallbackGLFW ref callbacks =
 
 callbackReshape :: Backend a => IORef a -> Callbacks
                 -> GLFW.Window -> Int -> Int -> IO ()
-callbackReshape ref callbacks _ sizeX sizeY =
-  reshapeCallback callbacks ref (sizeX, sizeY)
+callbackReshape ref callbacks _ =
+  reshapeCallback callbacks ref
 
 
 -- Keyboard Callback ----------------------------------------------------------

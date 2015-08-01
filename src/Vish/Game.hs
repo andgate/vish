@@ -8,6 +8,8 @@ import Vish.Graphics.Data.Picture (Picture)
 import qualified Vish.Graphics.Data.Picture as Pic
 
 import Control.Lens
+import Control.Monad
+import Data.IORef
 
 data GameWorld = GameWorld
   { _gameScript :: Script,
@@ -24,8 +26,11 @@ mkGameWorld script =
 makeLenses ''GameWorld
 
 instance AppListener GameWorld where
-  appDraw app =
-    return (app^.appWorld.currPic, app)
+  appDraw appRef =
+    liftM (^.appListener.currPic) (readIORef appRef)
+
+  appDispose app =
+    print "Disposing app"
 
 runScript :: Script -> IO ()
 runScript = play . mkGameWorld

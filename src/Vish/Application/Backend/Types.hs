@@ -76,7 +76,7 @@ type IdleCallback          = forall a . Backend a => IORef a -> IO ()
 type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
 
 -- | Arguments: (Width,Height) in pixels.
-type ReshapeCallback       = forall a . Backend a => IORef a -> (Int,Int) -> IO ()
+type ReshapeCallback       = forall a . Backend a => IORef a -> Int -> Int -> IO ()
 
 -- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed
 type KeyboardCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> IO ()
@@ -124,7 +124,7 @@ defaultCloseCallback :: CloseCallBack
 defaultCloseCallback _ = return ()
 
 defaultReshapeCallback :: ReshapeCallback
-defaultReshapeCallback _ _ = return ()
+defaultReshapeCallback _ _ _ = return ()
 
 defaultKeyboardCallback :: KeyboardCallback
 defaultKeyboardCallback _ _ _ _ = return ()
