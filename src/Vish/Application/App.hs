@@ -9,12 +9,14 @@ import           Vish.Application.Backend
 import           Vish.Graphics.Picture
 
 import           Control.Lens
+import           Control.Monad
 import           Data.IORef
+import           Data.Yaml
+import           Data.Maybe (fromMaybe)
 
 import           Graphics.Rendering.OpenGL    (get, ($=))
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import qualified Graphics.UI.GLUT             as GLUT
-
 
 play :: AppListener w => w -> IO ()
 play = playWithBackend defaultBackendState
@@ -24,21 +26,19 @@ playWithBackend backend world = do
   appRef <- newIORef =<< mkApp world
   appCreate appRef
 
-  let callbacks = defaultCallbacks
+  window <- loadWindow
+
+  let callbacks =
+        Callbacks
         { displayCallback     = displayUpdate appRef
+        , appPauseCallback    = pauseApplication appRef
+        , appResumeCallback   = resumeApplication appRef
         , closeCallback       = disposeApplication appRef
+        , reshapeCallback     = resizeWindow appRef
         , keyboardCallback    = updateKeyboardInput appRef
         , mouseMoveCallback   = updateMouseMoveInput appRef
         , mouseButtonCallback = updateMouseClickInput appRef
         , scrollCallback      = updateScrolledInput appRef
-        }
-      window = Window
-        { _winName = "Blank",
-          _winX = 0,
-          _winY = 0,
-          _winW = 640,
-          _winH = 480,
-          _winState = Windowed
         }
 
   registerInputListener appRef InputPrinter
@@ -56,9 +56,23 @@ displayUpdate appRef backendStateRef = do
 
   appPostUpdate appRef
 
+
+
+resizeWindow :: (AppListener w, Backend b) => AppRef w -> IORef b -> Int -> Int -> IO ()
+resizeWindow app _ =
+  appResize app
+
+pauseApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
+pauseApplication app _ =
+  appPause app
+
+resumeApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
+resumeApplication app _ =
+  appResume app
+
 disposeApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
-disposeApplication appRef _ =
-  appDispose appRef
+disposeApplication app _ =
+  appDispose app
 
 data InputPrinter = InputPrinter
 

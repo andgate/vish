@@ -47,7 +47,6 @@ instance Backend GLUTState where
   -- Call the GLUT mainloop.
   -- This function will return when something calls GLUT.leaveMainLoop
   runMainLoop _   = GLUT.mainLoop
-  postRedisplay _ = GLUT.postRedisplay Nothing
 
   getWindowDimensions _ = do
     GL.Size sizeX sizeY <- get GLUT.windowSize
@@ -210,16 +209,6 @@ callbackMotion :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
 callbackMotion ref callbacks (GLUT.Position posX posY) =
   motionCallback callbacks ref pos
   where pos = (fromIntegral posX, fromIntegral posY)
-
-
--- Idle Callback --------------------------------------------------------------
-installIdleCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installIdleCallbackGLUT ref callbacks =
-  GLUT.idleCallback $= Just (callbackIdle ref callbacks)
-
-callbackIdle :: IORef GLUTState -> Callbacks -> IO ()
-callbackIdle ref callbacks =
-  idleCallback callbacks ref
 
 -------------------------------------------------------------------------------
 -- | Convert GLUTs key codes to our internal ones.

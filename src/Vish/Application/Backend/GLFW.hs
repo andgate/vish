@@ -28,14 +28,8 @@ data GLFWState
         { -- | Status of Ctrl, Alt or Shift (Up or Down?)
           _modifiers     :: Modifiers
 
-        -- | Does the screen need to be redrawn?
-        , _dirtyScreen   :: Bool
-
         -- | Action that draws on the screen
         , _display       :: IO ()
-
-        -- | Action perforrmed when idling
-        , _idle          :: IO ()
 
         , _glfwWindow    :: Maybe GLFW.Window
         }
@@ -47,9 +41,7 @@ glfwStateInit :: GLFWState
 glfwStateInit =
   GLFWState
     { _modifiers     = Modifiers Up Up Up
-    , _dirtyScreen   = True
     , _display       = return ()
-    , _idle          = return ()
     , _glfwWindow    = Nothing
     }
 
@@ -69,7 +61,7 @@ instance Backend GLFWState where
   installCallbacks ref callbacks =
     mapM_ (\f -> f ref callbacks)
       [ installDisplayCallbackGLFW
-      , installIdleCallbackGLFW
+      , installWindowFocusCallbackGLFW
       , installWindowCloseCallbackGLFW
       , installReshapeCallbackGLFW
       , installKeyboardCallbackGLFW
@@ -79,7 +71,6 @@ instance Backend GLFWState where
       ]
 
   runMainLoop                = runMainLoopGLFW
-  postRedisplay              = postRedisplayGLFW
   getWindowDimensions        = getWindowDimensionsGLFW
 
   elapsedTime                = elapsedTimeGLFW
@@ -124,6 +115,8 @@ openWindowGLFW ref win = do
 
 -- Dump State -----------------------------------------------------------------
 -- | Print out the internal GLFW state.
+--   This code is taken from a sample in the GLFW repository.
+--   TODO: Implement a standard state dump across all backends.
 dumpStateGLFW :: IORef GLFWState -> IO ()
 dumpStateGLFW ref = do
   maybeWin <- return . (^.glfwWindow) =<< readIORef ref
@@ -257,12 +250,22 @@ callbackDisplay ref callbacks = do
   displayCallback callbacks ref
 
 
--- Idle Callback --------------------------------------------------------------
--- | Callback for when GLFW has finished its jobs and it's time for us to do
---   something for our application.
-installIdleCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
-installIdleCallbackGLFW ref callbacks =
-  modifyIORef ref $ idle .~ idleCallback callbacks ref
+-- Focus Callback -------------------------------------------------------------
+-- | Callback for when the user is focus/defocused on the window.
+--   Used to control pause/resume.
+installWindowFocusCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
+installWindowFocusCallbackGLFW ref callbacks =
+  whenWindow ref $ \glfwWin ->
+    GLFW.setWindowFocusCallback  glfwWin $ Just (windowFocusCallback ref callbacks)
+
+windowFocusCallback :: IORef GLFWState -> Callbacks
+                    -> GLFW.Window -> GLFW.FocusState -> IO ()
+windowFocusCallback ref callbacks _ focusState =
+  case focusState of
+    GLFW.FocusState'Focused ->
+      appResumeCallback callbacks ref
+    GLFW.FocusState'Defocused ->
+      appPauseCallback callbacks ref
 
 
 -- Close Callback -------------------------------------------------------------
@@ -352,35 +355,24 @@ callbackScroll ref callbacks _ =
 -- Main Loop ------------------------------------------------------------------
 runMainLoopGLFW :: IORef GLFWState -> IO ()
 runMainLoopGLFW ref =
-  X.catch go exit
-  where
-    exit :: X.SomeException -> IO ()
-    exit e = print e >> exitGLFW ref
+  whenWindow ref $ \glfwWin -> do
+    winShouldClose <- GLFW.windowShouldClose glfwWin
+    winFocus <- GLFW.getWindowFocused glfwWin
+    if winShouldClose
+      then
+        exitBackend ref
+      else do
+        case winFocus of
+          GLFW.FocusState'Defocused -> GLFW.waitEvents
+          GLFW.FocusState'Focused -> do
+            GLFW.pollEvents
 
-    go :: IO ()
-    go =
-      whenWindow ref $ \glfwWin -> do
-        winShouldClose <- GLFW.windowShouldClose glfwWin
-        unless winShouldClose $ do
-          GLFW.pollEvents
-          dirty <- return . (^.dirtyScreen) =<< readIORef ref
-
-          when dirty $ do
             (^.display) =<< readIORef ref
             GLFW.swapBuffers glfwWin
+            -- run gc to reduce pauses during mainloop (hopefully)
+            System.performGC
 
-          modifyIORef ref $ dirtyScreen .~ False
-          (^.idle) =<< readIORef ref
-          -- run gc to reduce pauses during mainloop (hopefully)
-          System.performGC
-          runMainLoopGLFW ref
-
-
--- Redisplay ------------------------------------------------------------------
-postRedisplayGLFW :: IORef GLFWState -> IO ()
-postRedisplayGLFW stateRef =
-  modifyIORef stateRef $ dirtyScreen .~ True
-
+        runMainLoopGLFW ref
 
 -- Get window dimensions ------------------------------------------------------
 getWindowDimensionsGLFW :: IORef GLFWState -> IO (Maybe (Int, Int))

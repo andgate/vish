@@ -1,0 +1,10 @@
+# Configuration for the game window.
+# All fields MUST be present.
+name: Vish Test
+x: 0
+y: 0
+w: 640
+h: 480
+state:
+  # "windowed" or "fullscreen"
+  type: windowed

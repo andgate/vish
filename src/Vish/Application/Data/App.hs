@@ -11,12 +11,15 @@ import Vish.Graphics.Texture
 
 type AppRef w = IORef (App w)
 
+getApp :: AppRef w -> IO (App w)
+getApp = readIORef
+
 class AppListener w where
   appCreate :: AppRef w -> IO ()
   appCreate _ = return ()
 
   appResize :: AppRef w -> Int -> Int -> IO ()
-  appResize a _ _ = return ()
+  appResize _ _ _ = return ()
 
   appUpdate :: AppRef w -> IO ()
   appUpdate _ = return ()
@@ -30,8 +33,8 @@ class AppListener w where
   appPause :: AppRef w -> IO ()
   appPause _ = return ()
 
-  appHide :: AppRef w -> IO ()
-  appHide _ = return ()
+  appResume :: AppRef w -> IO ()
+  appResume _ = return ()
 
   appDispose :: AppRef w -> IO ()
   appDispose _ = return ()
@@ -39,7 +42,7 @@ class AppListener w where
 data App w = App
   { _appGfx :: Gfx
   , _appInput :: Input
-  , _appListener :: w
+  , _appWorld :: w
   }
 
 data Gfx = Gfx

@@ -26,11 +26,17 @@ mkGameWorld script =
 makeLenses ''GameWorld
 
 instance AppListener GameWorld where
-  appDraw appRef =
-    liftM (^.appListener.currPic) (readIORef appRef)
+  appDraw app =
+    liftM (^.appWorld.currPic) (getApp app)
 
-  appDispose app =
+  appDispose _ =
     print "Disposing app"
+
+  appPause _ =
+    print "Application paused."
+
+  appResume _ =
+    print "Application resumed."
 
 runScript :: Script -> IO ()
 runScript = play . mkGameWorld

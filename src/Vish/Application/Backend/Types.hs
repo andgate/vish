@@ -48,9 +48,6 @@ class Backend a where
         -- | The mainloop of the backend.
         runMainLoop                :: IORef a -> IO ()
 
-        -- | A function that signals that screen has to be updated.
-        postRedisplay              :: IORef a -> IO ()
-
         -- | Function that returns (width,height) of the window in pixels.
         getWindowDimensions        :: IORef a -> IO (Maybe (Int,Int))
 
@@ -61,6 +58,7 @@ class Backend a where
         -- | Function that puts the current thread to sleep for 'n' seconds.
         sleep                      :: IORef a -> Double -> IO ()
 
+data RunState = Pause | Run
 
 -- The callbacks should work for all backends. We pass a reference to the
 -- backend state so that the callbacks have access to the class dictionary and
@@ -69,8 +67,11 @@ class Backend a where
 -- | Display callback has no arguments.
 type DisplayCallback       = forall a . Backend a => IORef a -> IO ()
 
--- | No arguments.
-type IdleCallback          = forall a . Backend a => IORef a -> IO ()
+-- | App pause callback has no arguments.
+type AppPauseCallback      = forall a . Backend a => IORef a -> IO ()
+
+-- | App resume callback has no argument.
+type AppResumeCallback      = forall a . Backend a => IORef a -> IO ()
 
 -- | Close callback has no arguments.
 type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
@@ -92,7 +93,8 @@ type ScrollCallback = forall a. Backend a => IORef a -> Double -> Double -> IO (
 
 data Callbacks = Callbacks
   { displayCallback :: DisplayCallback
-  , idleCallback :: IdleCallback
+  , appPauseCallback :: AppPauseCallback
+  , appResumeCallback :: AppResumeCallback
   , closeCallback :: CloseCallBack
   , reshapeCallback :: ReshapeCallback
   , keyboardCallback :: KeyboardCallback
@@ -105,7 +107,8 @@ defaultCallbacks :: Callbacks
 defaultCallbacks =
   Callbacks
   { displayCallback     = defaultDisplayCallback
-  , idleCallback        = defaultIdleCallback
+  , appPauseCallback    = defaultAppPauseCallback
+  , appResumeCallback   = defaultAppResumeCallback
   , closeCallback       = defaultCloseCallback
   , reshapeCallback     = defaultReshapeCallback
   , keyboardCallback    = defaultKeyboardCallback
@@ -117,8 +120,11 @@ defaultCallbacks =
 defaultDisplayCallback :: DisplayCallback
 defaultDisplayCallback _ = return ()
 
-defaultIdleCallback :: IdleCallback
-defaultIdleCallback _ = return ()
+defaultAppPauseCallback :: AppPauseCallback
+defaultAppPauseCallback _ = return ()
+
+defaultAppResumeCallback :: AppResumeCallback
+defaultAppResumeCallback _ = return ()
 
 defaultCloseCallback :: CloseCallBack
 defaultCloseCallback _ = return ()
