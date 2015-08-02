@@ -31,6 +31,13 @@ cacheInput table key state = do
       H.delete table key
       return $ Just state'
 
+cleanInputCache :: AppRef w -> IO ()
+cleanInputCache ref = do
+  keyTable <- H.new
+  buttonTable <- H.new
+  modifyIORef ref $ appInput.inputKeyTable .~ keyTable
+  modifyIORef ref $ appInput.inputButtonTable .~ buttonTable
+
 -- Input update --------------------------------------------------------------
 -- | Updates the input in the tables
 updateInput :: B.Backend a => AppRef w -> IORef a -> IO ()

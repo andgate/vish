@@ -46,6 +46,7 @@ playWithBackend backend world = do
 
 displayUpdate :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 displayUpdate appRef backendRef = do
+  updateInput appRef backendRef
   appUpdate appRef
   pic <- appDraw appRef
 
@@ -55,7 +56,6 @@ displayUpdate appRef backendRef = do
 
   appPostUpdate appRef
 
-  updateInput appRef backendRef
 
 resizeWindow :: (AppListener w, Backend b) => AppRef w -> IORef b -> Int -> Int -> IO ()
 resizeWindow app _ =
