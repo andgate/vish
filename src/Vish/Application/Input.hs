@@ -17,8 +17,8 @@ updateButtonTable :: ButtonTable -> MouseButton -> KeyState -> IO ()
 updateButtonTable =
   H.insert
 
-updateKeyboardInput :: Backend a => AppRef w -> IORef a -> Key -> KeyState -> Modifiers -> IO ()
-updateKeyboardInput appRef _ key keystate mods = do
+updateKeyboardInput :: Backend a => AppRef w -> IORef a -> Key -> KeyState -> IO ()
+updateKeyboardInput appRef _ key keystate = do
   input <- liftM (^.appInput) (readIORef appRef)
   updateKeyTable (input^.inputKeyTable) key keystate
   case keystate of
@@ -36,17 +36,18 @@ updateMouseMoveInput appRef _ moveX moveY = do
   mapM_ (\(MkInputListener a) -> mouseMoved a moveX moveY) listeners
 
 updateMouseClickInput :: Backend a => AppRef w -> IORef a
-                        -> MouseButton -> KeyState -> Modifiers -> IO ()
-updateMouseClickInput appRef _ button keystate mods = do
+                        -> MouseButton -> KeyState
+                        -> Double -> Double -> IO ()
+updateMouseClickInput appRef _ button keystate posX posY = do
   input <- liftM (^.appInput) (readIORef appRef)
   updateButtonTable (input^.inputButtonTable) button keystate
   case keystate of
     Down ->
-      mapM_ (\(MkInputListener a) -> mouseButtonClicked a button) (input^.inputListeners)
+      mapM_ (\(MkInputListener a) -> mouseButtonClicked a button posX posY) (input^.inputListeners)
     Up ->
-      mapM_ (\(MkInputListener a) -> mouseButtonReleased a button) (input^.inputListeners)
+      mapM_ (\(MkInputListener a) -> mouseButtonReleased a button posX posY) (input^.inputListeners)
     Held ->
-      mapM_ (\(MkInputListener a) -> mouseButtonHeld a button) (input^.inputListeners)
+      mapM_ (\(MkInputListener a) -> mouseButtonHeld a button posX posY) (input^.inputListeners)
 
 updateScrolledInput :: Backend a => AppRef w -> IORef a
                         -> Double -> Double -> IO ()

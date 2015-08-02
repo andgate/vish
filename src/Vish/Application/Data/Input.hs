@@ -42,14 +42,14 @@ class InputListener a where
   mouseMoved :: a -> Double -> Double -> IO ()
   mouseMoved _ _ _ = return ()
 
-  mouseButtonReleased :: a -> MouseButton -> IO ()
-  mouseButtonReleased _ _ = return ()
+  mouseButtonReleased :: a -> MouseButton -> Double -> Double ->  IO ()
+  mouseButtonReleased _ _ _ _ = return ()
 
-  mouseButtonClicked :: a -> MouseButton -> IO ()
-  mouseButtonClicked _ _ = return ()
+  mouseButtonClicked :: a -> MouseButton -> Double -> Double -> IO ()
+  mouseButtonClicked _ _ _ _ = return ()
 
-  mouseButtonHeld :: a -> MouseButton -> IO ()
-  mouseButtonHeld _ _ = return ()
+  mouseButtonHeld :: a -> MouseButton -> Double -> Double -> IO ()
+  mouseButtonHeld _ _ _ _ = return ()
 
   scrolled :: a -> Double -> Double -> IO ()
   scrolled _ _ _ = return ()

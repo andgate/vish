@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Vish.Application.Backend.GLUT
   (GLUTState)
 where
@@ -20,10 +21,14 @@ import qualified System.Mem  as System
 
 -- | We don't maintain any state information for the GLUT backend,
 --   so this data type is empty.
-data GLUTState = GLUTState
+data GLUTState =
+  GLUTState
+  { _glutisPlaying :: Bool }
+
+makeLenses ''GLUTState
 
 initGLUTState :: GLUTState
-initGLUTState  = GLUTState
+initGLUTState  = GLUTState True
 
 
 instance Backend GLUTState where
@@ -35,14 +40,17 @@ instance Backend GLUTState where
 
   openWindow = openWindowGLUT
   dumpBackendState = dumpStateGLUT
-  installDisplayCallback = installDisplayCallbackGLUT
 
-  installWindowCloseCallback = installWindowCloseCallbackGLUT
-
-  installReshapeCallback = installReshapeCallbackGLUT
-  installKeyMouseCallback = installKeyMouseCallbackGLUT
-  installMotionCallback = installMotionCallbackGLUT
-  installIdleCallback = installIdleCallbackGLUT
+  installCallbacks ref callbacks =
+    mapM_ (\f -> f ref callbacks)
+      [ installDisplayCallbackGLUT
+      , installPauseResumeCallbackGLUT
+      , installWindowCloseCallbackGLUT
+      , installReshapeCallbackGLUT
+      , installKeyboardCallbackGLUT
+      , installMouseMoveCallbackGLUT
+      , installMouseCallbackGLUT
+      ]
 
   -- Call the GLUT mainloop.
   -- This function will return when something calls GLUT.leaveMainLoop
@@ -145,22 +153,41 @@ installDisplayCallbackGLUT ref callbacks =
 
 callbackDisplay :: IORef GLUTState -> Callbacks -> IO ()
 callbackDisplay ref callbacks = do
-  GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-  GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
-  GL.blend $= GL.Enabled
-  GL.blendFunc $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
+  isPlaying <- liftM (^.glutisPlaying) (readIORef ref)
+  when isPlaying $ do
+    GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+    GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
+    GL.blend $= GL.Enabled
+    GL.blendFunc $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
 
-  -- get the display callbacks from the chain
-  displayCallback callbacks ref
+    -- get the display callbacks from the chain
+    displayCallback callbacks ref
 
-  -- swap front and back buffers
-  GLUT.swapBuffers
-  -- run gc to reduce pauses during mainloop (hopefully)
-  System.performGC
+    -- swap front and back buffers
+    GLUT.swapBuffers
+    -- run gc to reduce pauses during mainloop (hopefully)
+    System.performGC
 
-  -- Don't report errors by default.
-  -- The windows OpenGL implementation seems to complain for no reason.
-  --  GLUT.reportErrors
+    -- Don't report errors by default.
+    -- The windows OpenGL implementation seems to complain for no reason.
+    --  GLUT.reportErrors
+
+-- App Status Callback -----------------------------------------------------
+-- | Callback for when the app is paused/resumed.
+installPauseResumeCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installPauseResumeCallbackGLUT ref callbacks =
+  GLUT.crossingCallback $= Just (callbackVisibility ref callbacks)
+
+callbackVisibility :: IORef GLUTState -> Callbacks -> GLUT.Crossing -> IO ()
+callbackVisibility ref callbacks vis =
+  case vis of
+    GLUT.WindowEntered -> do
+      modifyIORef ref $ glutisPlaying .~ True
+      resumeCallback callbacks ref
+    GLUT.WindowLeft -> do
+      modifyIORef ref $ glutisPlaying .~ False
+      pauseCallback callbacks ref
+
 
 -- Close Callback -------------------------------------------------------------
 -- | Callback for when the user closes the window.
@@ -177,100 +204,215 @@ installReshapeCallbackGLUT ref callbacks =
 
 callbackReshape :: IORef GLUTState -> Callbacks -> GLUT.Size -> IO ()
 callbackReshape ref callbacks (GLUT.Size sizeX sizeY) =
-  reshapeCallback callbacks ref (fromEnum sizeX, fromEnum sizeY)
+  reshapeCallback callbacks ref (fromEnum sizeX) (fromEnum sizeY)
 
 
--- KeyMouse Callback ----------------------------------------------------------
-installKeyMouseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installKeyMouseCallbackGLUT ref callbacks =
-  GLUT.keyboardMouseCallback $= Just (callbackKeyMouse ref callbacks)
+-- Keyboard Callback ----------------------------------------------------------
+installKeyboardCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installKeyboardCallbackGLUT ref callbacks = do
+  GLUT.keyboardCallback $= Just (callbackKeyboard ref callbacks Down)
+  GLUT.keyboardUpCallback $= Just (callbackKeyboard ref callbacks Up)
+  GLUT.specialCallback $= Just (callbackSpecialKey ref callbacks Down)
+  GLUT.specialUpCallback $= Just (callbackSpecialKey ref callbacks Up)
 
-callbackKeyMouse :: IORef GLUTState -> Callbacks
-                 -> GLUT.Key -> GLUT.KeyState -> GLUT.Modifiers -> GLUT.Position
-                 -> IO ()
-callbackKeyMouse ref callbacks
-                 key keystate modifiers
-                 (GLUT.Position posX posY) =
-  keyboardMouseCallback callbacks ref key' keyState' modifiers' pos
+callbackKeyboard :: IORef GLUTState -> Callbacks -> KeyState
+                  -> Char -> GLUT.Position -> IO ()
+callbackKeyboard ref callbacks state c _ =
+  keyboardCallback callbacks ref key state
+  where key = fromGLUT c
+
+callbackSpecialKey :: IORef GLUTState -> Callbacks -> KeyState
+                  -> GLUT.SpecialKey -> GLUT.Position -> IO ()
+callbackSpecialKey ref callbacks state key _ =
+  keyboardCallback callbacks ref key' state
+  where key' = fromGLUT key
+
+
+-- Move Movement Callback ------------------------------------------------------------
+installMouseMoveCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installMouseMoveCallbackGLUT ref callbacks = do
+  GLUT.motionCallback        $= Just (callbackMouseMove ref callbacks)
+  GLUT.passiveMotionCallback $= Just (callbackMouseMove ref callbacks)
+
+callbackMouseMove :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
+callbackMouseMove ref callbacks (GLUT.Position posX posY) =
+  mouseMoveCallback callbacks ref (fromIntegral posX) (fromIntegral posY)
+
+
+-- Mouse Callback ------------------------------------------------------
+installMouseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
+installMouseCallbackGLUT ref callbacks =
+  GLUT.mouseCallback $= Just (callbackMouse ref callbacks)
+
+callbackMouse :: IORef GLUTState -> Callbacks -> GLUT.MouseButton
+                  -> GLUT.KeyState -> GLUT.Position -> IO ()
+callbackMouse ref callbacks button keystate (GLUT.Position posX posY) =
+  case button of
+    GLUT.WheelUp -> scrollCallback callbacks ref 0 1
+    GLUT.WheelDown -> scrollCallback callbacks ref 0 (-1)
+    _ ->
+      mouseButtonCallback callbacks ref button' keystate' posX' posY'
   where
-    key'       = glutKeyToKey key
-    keyState'  = glutKeyStateToKeyState keystate
-    modifiers' = glutModifiersToModifiers modifiers
-    pos        = (fromIntegral posX, fromIntegral posY)
+    button' = fromGLUT button
+    keystate'  = fromGLUT keystate
+    posX' = fromIntegral posX
+    posY' = fromIntegral posY
 
+-- GLUT type Conversion -------------------------------------------------------
+class GLUTConv a b where
+  fromGLUT :: a -> b
 
--- Motion Callback ------------------------------------------------------------
-installMotionCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installMotionCallbackGLUT ref callbacks = do
-  GLUT.motionCallback        $= Just (callbackMotion ref callbacks)
-  GLUT.passiveMotionCallback $= Just (callbackMotion ref callbacks)
+instance GLUTConv Char Key where
+  fromGLUT c =
+    case c of
+      '\32'  -> Key'Space
+      '\13'  -> Key'Enter
+      '\9'   -> Key'Tab
+      '\ESC' -> Key'Escape
+      '\DEL' -> Key'Delete
+      'A'    -> Key'A
+      'a'    -> Key'a
+      'B'    -> Key'B
+      'b'    -> Key'b
+      'C'    -> Key'C
+      'c'    -> Key'c
+      'D'    -> Key'D
+      'd'    -> Key'd
+      'E'    -> Key'E
+      'e'    -> Key'e
+      'F'    -> Key'F
+      'f'    -> Key'f
+      'G'    -> Key'G
+      'g'    -> Key'g
+      'H'    -> Key'H
+      'h'    -> Key'h
+      'I'    -> Key'I
+      'i'    -> Key'i
+      'J'    -> Key'J
+      'j'    -> Key'j
+      'K'    -> Key'K
+      'k'    -> Key'k
+      'L'    -> Key'L
+      'l'    -> Key'l
+      'M'    -> Key'M
+      'm'    -> Key'm
+      'N'    -> Key'N
+      'n'    -> Key'n
+      'O'    -> Key'O
+      'o'    -> Key'o
+      'P'    -> Key'P
+      'p'    -> Key'p
+      'Q'    -> Key'Q
+      'q'    -> Key'q
+      'R'    -> Key'R
+      'r'    -> Key'r
+      'S'    -> Key'S
+      's'    -> Key's
+      'T'    -> Key'T
+      't'    -> Key't
+      'U'    -> Key'U
+      'u'    -> Key'u
+      'V'    -> Key'V
+      'v'    -> Key'v
+      'W'    -> Key'W
+      'w'    -> Key'w
+      'X'    -> Key'X
+      'x'    -> Key'x
+      'Y'    -> Key'Y
+      'y'    -> Key'y
+      'Z'    -> Key'Z
+      'z'    -> Key'z
+      '`'    -> Key'GraveAccent
+      '1'    -> Key'1
+      '2'    -> Key'2
+      '3'    -> Key'3
+      '4'    -> Key'4
+      '5'    -> Key'5
+      '6'    -> Key'6
+      '7'    -> Key'7
+      '8'    -> Key'8
+      '9'    -> Key'9
+      '0'    -> Key'0
+      '-'    -> Key'Minus
+      '='    -> Key'Equal
+      '~'    -> Key'Tilde
+      '!'    -> Key'Exclaim
+      '@'    -> Key'Ampersand
+      '#'    -> Key'Hash
+      '$'    -> Key'Dollar
+      '%'    -> Key'Percent
+      '^'    -> Key'Caret
+      '&'    -> Key'Ampersand
+      '*'    -> Key'Asterisk
+      '('    -> Key'LeftParens
+      ')'    -> Key'RightParens
+      '_'    -> Key'Underscore
+      '+'    -> Key'Plus
+      '['    -> Key'LeftBracket
+      ']'    -> Key'RightBracket
+      '\\'   -> Key'Backslash
+      ';'    -> Key'Semicolon
+      '\''   -> Key'Apostrophe
+      ','    -> Key'Comma
+      '.'    -> Key'Period
+      '/'    -> Key'Slash
+      '{'    -> Key'LeftCurlyBracket
+      '}'    -> Key'RightCurlyBracket
+      '|'    -> Key'Pipe
+      ':'    -> Key'Colon
+      '"'    -> Key'Quote
+      '<'    -> Key'LesserThan
+      '>'    -> Key'GreaterThan
+      '?'    -> Key'Question
+      _      -> Key'Unknown
 
-callbackMotion :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
-callbackMotion ref callbacks (GLUT.Position posX posY) =
-  motionCallback callbacks ref pos
-  where pos = (fromIntegral posX, fromIntegral posY)
+instance GLUTConv GLUT.SpecialKey Key where
+  fromGLUT key =
+    case key of
+      GLUT.KeyUnknown _          -> Key'Unknown
+      GLUT.KeyF1                 -> Key'F1
+      GLUT.KeyF2                 -> Key'F2
+      GLUT.KeyF3                 -> Key'F3
+      GLUT.KeyF4                 -> Key'F4
+      GLUT.KeyF5                 -> Key'F5
+      GLUT.KeyF6                 -> Key'F6
+      GLUT.KeyF7                 -> Key'F7
+      GLUT.KeyF8                 -> Key'F8
+      GLUT.KeyF9                 -> Key'F9
+      GLUT.KeyF10                -> Key'F10
+      GLUT.KeyF11                -> Key'F11
+      GLUT.KeyF12                -> Key'F12
+      GLUT.KeyLeft               -> Key'Left
+      GLUT.KeyUp                 -> Key'Up
+      GLUT.KeyRight              -> Key'Right
+      GLUT.KeyDown               -> Key'Down
+      GLUT.KeyPageUp             -> Key'PageUp
+      GLUT.KeyPageDown           -> Key'PageDown
+      GLUT.KeyHome               -> Key'Home
+      GLUT.KeyEnd                -> Key'End
+      GLUT.KeyInsert             -> Key'Insert
+      GLUT.KeyNumLock            -> Key'NumLock
+      GLUT.KeyBegin              -> Key'RightSuper
+      GLUT.KeyDelete             -> Key'Delete
+      GLUT.KeyShiftL             -> Key'LeftShift
+      GLUT.KeyShiftR             -> Key'RightShift
+      GLUT.KeyCtrlL              -> Key'LeftControl
+      GLUT.KeyCtrlR              -> Key'RightControl
+      GLUT.KeyAltL               -> Key'LeftAlt
+      GLUT.KeyAltR               -> Key'RightAlt
 
--------------------------------------------------------------------------------
--- | Convert GLUTs key codes to our internal ones.
-glutKeyToKey :: GLUT.Key -> Key
-glutKeyToKey key
- = case key of
-        GLUT.Char '\32'                            -> SpecialKey KeySpace
-        GLUT.Char '\13'                            -> SpecialKey KeyEnter
-        GLUT.Char '\9'                             -> SpecialKey KeyTab
-        GLUT.Char '\ESC'                           -> SpecialKey KeyEsc
-        GLUT.Char '\DEL'                           -> SpecialKey KeyDelete
-        GLUT.Char c                                -> Char c
-        GLUT.SpecialKey GLUT.KeyF1                 -> SpecialKey KeyF1
-        GLUT.SpecialKey GLUT.KeyF2                 -> SpecialKey KeyF2
-        GLUT.SpecialKey GLUT.KeyF3                 -> SpecialKey KeyF3
-        GLUT.SpecialKey GLUT.KeyF4                 -> SpecialKey KeyF4
-        GLUT.SpecialKey GLUT.KeyF5                 -> SpecialKey KeyF5
-        GLUT.SpecialKey GLUT.KeyF6                 -> SpecialKey KeyF6
-        GLUT.SpecialKey GLUT.KeyF7                 -> SpecialKey KeyF7
-        GLUT.SpecialKey GLUT.KeyF8                 -> SpecialKey KeyF8
-        GLUT.SpecialKey GLUT.KeyF9                 -> SpecialKey KeyF9
-        GLUT.SpecialKey GLUT.KeyF10                -> SpecialKey KeyF10
-        GLUT.SpecialKey GLUT.KeyF11                -> SpecialKey KeyF11
-        GLUT.SpecialKey GLUT.KeyF12                -> SpecialKey KeyF12
-        GLUT.SpecialKey GLUT.KeyLeft               -> SpecialKey KeyLeft
-        GLUT.SpecialKey GLUT.KeyUp                 -> SpecialKey KeyUp
-        GLUT.SpecialKey GLUT.KeyRight              -> SpecialKey KeyRight
-        GLUT.SpecialKey GLUT.KeyDown               -> SpecialKey KeyDown
-        GLUT.SpecialKey GLUT.KeyPageUp             -> SpecialKey KeyPageUp
-        GLUT.SpecialKey GLUT.KeyPageDown           -> SpecialKey KeyPageDown
-        GLUT.SpecialKey GLUT.KeyHome               -> SpecialKey KeyHome
-        GLUT.SpecialKey GLUT.KeyEnd                -> SpecialKey KeyEnd
-        GLUT.SpecialKey GLUT.KeyInsert             -> SpecialKey KeyInsert
-        GLUT.SpecialKey GLUT.KeyNumLock            -> SpecialKey KeyNumLock
-        GLUT.SpecialKey GLUT.KeyBegin              -> SpecialKey KeyBegin
-        GLUT.SpecialKey GLUT.KeyDelete             -> SpecialKey KeyDelete
-        GLUT.SpecialKey (GLUT.KeyUnknown _)        -> SpecialKey KeyUnknown
-        GLUT.SpecialKey GLUT.KeyShiftL             -> SpecialKey KeyShiftL
-        GLUT.SpecialKey GLUT.KeyShiftR             -> SpecialKey KeyShiftR
-        GLUT.SpecialKey GLUT.KeyCtrlL              -> SpecialKey KeyCtrlL
-        GLUT.SpecialKey GLUT.KeyCtrlR              -> SpecialKey KeyCtrlR
-        GLUT.SpecialKey GLUT.KeyAltL               -> SpecialKey KeyAltL
-        GLUT.SpecialKey GLUT.KeyAltR               -> SpecialKey KeyAltR
-        GLUT.MouseButton GLUT.LeftButton           -> MouseButton LeftButton
-        GLUT.MouseButton GLUT.MiddleButton         -> MouseButton MiddleButton
-        GLUT.MouseButton GLUT.RightButton          -> MouseButton RightButton
-        GLUT.MouseButton GLUT.WheelUp              -> MouseButton WheelUp
-        GLUT.MouseButton GLUT.WheelDown            -> MouseButton WheelDown
-        GLUT.MouseButton (GLUT.AdditionalButton i) -> MouseButton (AdditionalButton i)
+instance GLUTConv GLUT.MouseButton MouseButton where
+  fromGLUT button =
+    case button of
+      GLUT.LeftButton           -> Left'Button
+      GLUT.MiddleButton         -> Middle'Button
+      GLUT.RightButton          -> Right'Button
+      GLUT.AdditionalButton i   -> Additional'Button i
+      _                         -> Unknown'Button
 
 -- | Convert GLUTs key states to our internal ones.
-glutKeyStateToKeyState :: GLUT.KeyState -> KeyState
-glutKeyStateToKeyState state
- = case state of
-        GLUT.Down       -> Down
-        GLUT.Up         -> Up
-
-
--- | Convert GLUTs key states to our internal ones.
-glutModifiersToModifiers :: GLUT.Modifiers -> Modifiers
-
-glutModifiersToModifiers (GLUT.Modifiers a b c)
-        = Modifiers     (glutKeyStateToKeyState a)
-                        (glutKeyStateToKeyState b)
-                        (glutKeyStateToKeyState c)
+instance GLUTConv GLUT.KeyState KeyState where
+  fromGLUT state =
+    case state of
+      GLUT.Down       -> Down
+      GLUT.Up         -> Up

@@ -16,7 +16,6 @@ import           Data.Maybe (fromMaybe)
 
 import           Graphics.Rendering.OpenGL    (get, ($=))
 import qualified Graphics.Rendering.OpenGL.GL as GL
-import qualified Graphics.UI.GLUT             as GLUT
 
 play :: AppListener w => w -> IO ()
 play = playWithBackend defaultBackendState
@@ -31,8 +30,8 @@ playWithBackend backend world = do
   let callbacks =
         Callbacks
         { displayCallback     = displayUpdate appRef
-        , appPauseCallback    = pauseApplication appRef
-        , appResumeCallback   = resumeApplication appRef
+        , pauseCallback    = pauseApplication appRef
+        , resumeCallback   = resumeApplication appRef
         , closeCallback       = disposeApplication appRef
         , reshapeCallback     = resizeWindow appRef
         , keyboardCallback    = updateKeyboardInput appRef
@@ -56,8 +55,6 @@ displayUpdate appRef backendStateRef = do
 
   appPostUpdate appRef
 
-
-
 resizeWindow :: (AppListener w, Backend b) => AppRef w -> IORef b -> Int -> Int -> IO ()
 resizeWindow app _ =
   appResize app
@@ -78,7 +75,7 @@ data InputPrinter = InputPrinter
 
 instance InputListener InputPrinter where
   keyPressed _ key = print key
-  mouseButtonClicked _ button = print button
+  mouseButtonClicked _ button x y = putStrLn $ show button ++ ": " ++ show (x, y)
   mouseMoved _ x y = putStrLn $ "Mouse Moved: " ++ show (x,y)
   scrolled _ x y = putStrLn $ "Scrolled: " ++ show (x,y)
 

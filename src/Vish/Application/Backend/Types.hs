@@ -68,10 +68,10 @@ data RunState = Pause | Run
 type DisplayCallback       = forall a . Backend a => IORef a -> IO ()
 
 -- | App pause callback has no arguments.
-type AppPauseCallback      = forall a . Backend a => IORef a -> IO ()
+type PauseCallback      = forall a . Backend a => IORef a -> IO ()
 
 -- | App resume callback has no argument.
-type AppResumeCallback      = forall a . Backend a => IORef a -> IO ()
+type ResumeCallback      = forall a . Backend a => IORef a -> IO ()
 
 -- | Close callback has no arguments.
 type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
@@ -80,21 +80,21 @@ type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
 type ReshapeCallback       = forall a . Backend a => IORef a -> Int -> Int -> IO ()
 
 -- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed
-type KeyboardCallback = forall a . Backend a => IORef a -> Key -> KeyState -> Modifiers -> IO ()
+type KeyboardCallback = forall a . Backend a => IORef a -> Key -> KeyState -> IO ()
 
 -- | Arguments: (PosX,PosY) in pixels.
 type MouseMoveCallback        = forall a . Backend a => IORef a -> Double -> Double -> IO ()
 
 -- | Arguments: Mouse button, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
-type MouseButtonCallback = forall a . Backend a => IORef a -> MouseButton -> KeyState -> Modifiers -> IO ()
+type MouseButtonCallback = forall a . Backend a => IORef a -> MouseButton -> KeyState -> Double -> Double -> IO ()
 
 -- | Arguments: (ScrollX, ScrollY)
 type ScrollCallback = forall a. Backend a => IORef a -> Double -> Double -> IO ()
 
 data Callbacks = Callbacks
   { displayCallback :: DisplayCallback
-  , appPauseCallback :: AppPauseCallback
-  , appResumeCallback :: AppResumeCallback
+  , pauseCallback :: PauseCallback
+  , resumeCallback :: ResumeCallback
   , closeCallback :: CloseCallBack
   , reshapeCallback :: ReshapeCallback
   , keyboardCallback :: KeyboardCallback
@@ -107,8 +107,8 @@ defaultCallbacks :: Callbacks
 defaultCallbacks =
   Callbacks
   { displayCallback     = defaultDisplayCallback
-  , appPauseCallback    = defaultAppPauseCallback
-  , appResumeCallback   = defaultAppResumeCallback
+  , pauseCallback       = defaultPauseCallback
+  , resumeCallback      = defaultResumeCallback
   , closeCallback       = defaultCloseCallback
   , reshapeCallback     = defaultReshapeCallback
   , keyboardCallback    = defaultKeyboardCallback
@@ -120,11 +120,11 @@ defaultCallbacks =
 defaultDisplayCallback :: DisplayCallback
 defaultDisplayCallback _ = return ()
 
-defaultAppPauseCallback :: AppPauseCallback
-defaultAppPauseCallback _ = return ()
+defaultPauseCallback :: PauseCallback
+defaultPauseCallback _ = return ()
 
-defaultAppResumeCallback :: AppResumeCallback
-defaultAppResumeCallback _ = return ()
+defaultResumeCallback :: ResumeCallback
+defaultResumeCallback _ = return ()
 
 defaultCloseCallback :: CloseCallBack
 defaultCloseCallback _ = return ()
@@ -133,13 +133,13 @@ defaultReshapeCallback :: ReshapeCallback
 defaultReshapeCallback _ _ _ = return ()
 
 defaultKeyboardCallback :: KeyboardCallback
-defaultKeyboardCallback _ _ _ _ = return ()
+defaultKeyboardCallback _ _ _ = return ()
 
 defaultMouseMoveCallback :: MouseMoveCallback
 defaultMouseMoveCallback _ _ _ = return ()
 
 defaultMouseButtonCallback :: MouseButtonCallback
-defaultMouseButtonCallback _ _ _ _ = return ()
+defaultMouseButtonCallback _ _ _ _ _ = return ()
 
 defaultScrollCallback :: ScrollCallback
 defaultScrollCallback _ _ _ = return ()

@@ -25,12 +25,10 @@ import qualified Graphics.Rendering.OpenGL as GL
 -- | State of the GLFW backend library.
 data GLFWState
         = GLFWState
-        { -- | Status of Ctrl, Alt or Shift (Up or Down?)
-          _modifiers     :: Modifiers
-
+        {
         -- | Action that draws on the screen
-        , _display       :: IO ()
-
+        _display       :: IO ()
+        -- | Window in use by the backend
         , _glfwWindow    :: Maybe GLFW.Window
         }
 
@@ -40,8 +38,7 @@ makeLenses ''GLFWState
 glfwStateInit :: GLFWState
 glfwStateInit =
   GLFWState
-    { _modifiers     = Modifiers Up Up Up
-    , _display       = return ()
+    { _display       = return ()
     , _glfwWindow    = Nothing
     }
 
@@ -256,16 +253,16 @@ callbackDisplay ref callbacks = do
 installWindowFocusCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installWindowFocusCallbackGLFW ref callbacks =
   whenWindow ref $ \glfwWin ->
-    GLFW.setWindowFocusCallback  glfwWin $ Just (windowFocusCallback ref callbacks)
+    GLFW.setWindowFocusCallback  glfwWin $ Just (callbackWindowFocus ref callbacks)
 
-windowFocusCallback :: IORef GLFWState -> Callbacks
+callbackWindowFocus :: IORef GLFWState -> Callbacks
                     -> GLFW.Window -> GLFW.FocusState -> IO ()
-windowFocusCallback ref callbacks _ focusState =
+callbackWindowFocus ref callbacks _ focusState =
   case focusState of
     GLFW.FocusState'Focused ->
-      appResumeCallback callbacks ref
+      resumeCallback callbacks ref
     GLFW.FocusState'Defocused ->
-      appPauseCallback callbacks ref
+      pauseCallback callbacks ref
 
 
 -- Close Callback -------------------------------------------------------------
@@ -274,10 +271,10 @@ windowFocusCallback ref callbacks _ focusState =
 installWindowCloseCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installWindowCloseCallbackGLFW ref callbacks =
   whenWindow ref $ \glfwWin ->
-    GLFW.setWindowCloseCallback glfwWin $ Just (windowCloseCallback ref callbacks)
+    GLFW.setWindowCloseCallback glfwWin $ Just (callbackWindowClose ref callbacks)
 
-windowCloseCallback :: IORef GLFWState -> Callbacks -> GLFW.Window -> IO ()
-windowCloseCallback ref callbacks _ =
+callbackWindowClose :: IORef GLFWState -> Callbacks -> GLFW.Window -> IO ()
+callbackWindowClose ref callbacks _ =
   closeCallback callbacks ref
 
 -- Reshape --------------------------------------------------------------------
@@ -302,17 +299,14 @@ installKeyboardCallbackGLFW ref callbacks =
 callbackKeyboard :: IORef GLFWState -> Callbacks
                   -> GLFW.Window -> GLFW.Key -> Int
                   -> GLFW.KeyState -> GLFW.ModifierKeys -> IO ()
-callbackKeyboard ref callbacks _ key scancode keystate mods = do
-  let key'      = fromGLFW key
-      keystate' = fromGLFW keystate
-      mods'     = fromGLFW mods
-
-  modifyIORef ref $ modifiers .~ mods'
-  keyboardCallback callbacks ref key' keystate' mods'
+callbackKeyboard ref callbacks _ key scancode keystate _ =
+  keyboardCallback callbacks ref key' keystate'
+  where
+    key'      = fromGLFW key
+    keystate' = fromGLFW keystate
 
 
 -- Mouse Movement Callback ----------------------------------------------------
--- | Callback for when the user moves the mouse.
 installMouseMoveCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installMouseMoveCallbackGLFW ref callbacks =
   whenWindow ref $ \glfwWin ->
@@ -330,14 +324,14 @@ installMouseButtonCallbackGLFW ref callbacks =
   whenWindow ref $ \glfwWin ->
     GLFW.setMouseButtonCallback glfwWin $ Just (callbackMouseButton ref callbacks)
 
-callbackMouseButton :: IORef GLFWState -> Callbacks -> GLFW.Window
-                    -> GLFW.MouseButton -> GLFW.MouseButtonState
+callbackMouseButton :: IORef GLFWState -> Callbacks -> (Double, Double)
+                    -> GLFW.Window -> GLFW.MouseButton -> GLFW.MouseButtonState
                     -> GLFW.ModifierKeys -> IO ()
-callbackMouseButton ref callbacks _ button keystate mods = do
-  let button'   = fromGLFW button
-      keystate' = fromGLFW keystate
-      mods'     = fromGLFW mods
-  mouseButtonCallback callbacks ref button' keystate' mods'
+callbackMouseButton ref callbacks pos _ button keystate _ =
+  mouseButtonCallback callbacks ref button' keystate' pos
+  where
+    button'   = fromGLFW button
+    keystate' = fromGLFW keystate
 
 
 -- Scroll Callback ------------------------------------------------------------
@@ -391,7 +385,7 @@ elapsedTimeGLFW _ = do
   maybeTime <- GLFW.getTime
   return $ fromMaybe 0 maybeTime
 
--- Key Code Conversion --------------------------------------------------------
+-- GLFW type Conversion -------------------------------------------------------
 class GLFWConv a b where
   fromGLFW :: a -> b
 
@@ -407,14 +401,6 @@ instance GLFWConv GLFW.MouseButtonState KeyState where
     case keystate of
       GLFW.MouseButtonState'Pressed   -> Down
       GLFW.MouseButtonState'Released  -> Up
-
-instance GLFWConv GLFW.ModifierKeys Modifiers where
-  fromGLFW (GLFW.ModifierKeys s c a _) =
-    Modifiers {
-      _shift = if s then Down else Up,
-      _ctrl  = if c then Down else Up,
-      _alt   = if a then Down else Up
-    }
 
 instance GLFWConv GLFW.Key Key where
   fromGLFW key =
