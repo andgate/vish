@@ -39,13 +39,16 @@ updateInput appRef backendRef = do
   let keyTable    = input^.inputKeyTable
       buttonTable = input^.inputButtonTable
       listeners   = input^.inputListeners
-      pos         = input^.inputMousePosition
+      pos1        = input^.inputMousePos1
+      pos2        = input^.inputMousePos2
 
   updateInputTable backendRef  keyTable
   updateInputTable backendRef buttonTable
 
   H.mapM_ (notifyKeyListeners listeners) keyTable
-  H.mapM_ (notifyButtonListeners listeners pos pos) buttonTable
+  H.mapM_ (notifyButtonListeners listeners pos1 pos2) buttonTable
+
+  modifyIORef appRef $ appInput.inputMousePos1 .~ pos2
 
 notifyKeyListeners :: [Registrable] -> (Key, InputState) -> IO ()
 notifyKeyListeners listeners (key, state) =
@@ -112,28 +115,32 @@ updateMouseMoveInput :: B.Backend a => AppRef w -> IORef a
 updateMouseMoveInput appRef _ posX2 posY2 = do
   input <- liftM (^.appInput) (readIORef appRef)
   let listeners = input^.inputListeners
-      pos1@(posX1, posY1) = input^.inputMousePosition
+      pos1@(posX1, posY1) = input^.inputMousePos2
       pos2 = (posX2, posY2)
       pos' = (posX2 - posX1, posY2 - posY1)
 
-  modifyIORef appRef $ appInput.inputMousePosition .~ pos'
+  modifyIORef appRef $ appInput.inputMousePos1 .~ pos1
+  modifyIORef appRef $ appInput.inputMousePos2 .~ pos2
+
   mapM_ (\(MkInputListener a) -> mousePositioned a pos2) listeners
   mapM_ (\(MkInputListener a) -> mouseMoved a pos') listeners
 
 updateMouseClickInput :: B.Backend a => AppRef w -> IORef a
                         -> MouseButton -> B.InputState
                         -> Double -> Double -> IO ()
-updateMouseClickInput appRef backendRef button state posX' posY' = do
+updateMouseClickInput appRef backendRef button state posX2 posY2 = do
   input <- liftM (^.appInput) (readIORef appRef)
   let listeners = input^.inputListeners
-      pos = input^.inputMousePosition
-      pos' = (posX', posY')
+      pos1 = input^.inputMousePos2
+      pos2 = (posX2, posY2)
 
-  modifyIORef appRef $ appInput.inputMousePosition .~ pos'
+  modifyIORef appRef $ appInput.inputMousePos1 .~ pos1
+  modifyIORef appRef $ appInput.inputMousePos2 .~ pos2
+
   maybeState' <- cacheInput (input^.inputButtonTable) button state
   case maybeState' of
     Nothing -> return ()
-    Just state' -> notifyButtonListeners listeners pos pos' (button, state')
+    Just state' -> notifyButtonListeners listeners pos1 pos2 (button, state')
 
 updateScrolledInput :: B.Backend a => AppRef w -> IORef a
                         -> Double -> Double -> IO ()

@@ -61,7 +61,8 @@ data Input = Input
   { _inputKeyTable :: KeyTable
   , _inputButtonTable :: ButtonTable
   , _inputListeners :: [Registrable]
-  , _inputMousePosition :: (Double, Double)
+  , _inputMousePos1 :: (Double, Double)
+  , _inputMousePos2 :: (Double, Double)
   }
 
 makeLenses ''Input
@@ -77,5 +78,6 @@ mkInput = do
     { _inputKeyTable = keyTable
     , _inputButtonTable = buttonTable
     , _inputListeners = listeners
-    , _inputMousePosition = mousePos
+    , _inputMousePos1 = mousePos
+    , _inputMousePos2 = mousePos
     }
