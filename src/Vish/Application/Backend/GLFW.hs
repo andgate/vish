@@ -299,11 +299,14 @@ installKeyboardCallbackGLFW ref callbacks =
 callbackKeyboard :: IORef GLFWState -> Callbacks
                   -> GLFW.Window -> GLFW.Key -> Int
                   -> GLFW.KeyState -> GLFW.ModifierKeys -> IO ()
-callbackKeyboard ref callbacks _ key scancode keystate _ =
+callbackKeyboard ref callbacks _ key scancode keystate mods =
   keyboardCallback callbacks ref key' keystate'
   where
-    key'      = fromGLFW key
     keystate' = fromGLFW keystate
+    key' =
+      if GLFW.modifierKeysShift mods
+        then shiftKey . fromGLFW $ key
+        else fromGLFW key
 
 
 -- Mouse Movement Callback ----------------------------------------------------
@@ -324,11 +327,13 @@ installMouseButtonCallbackGLFW ref callbacks =
   whenWindow ref $ \glfwWin ->
     GLFW.setMouseButtonCallback glfwWin $ Just (callbackMouseButton ref callbacks)
 
-callbackMouseButton :: IORef GLFWState -> Callbacks -> (Double, Double)
+callbackMouseButton :: IORef GLFWState -> Callbacks
                     -> GLFW.Window -> GLFW.MouseButton -> GLFW.MouseButtonState
                     -> GLFW.ModifierKeys -> IO ()
-callbackMouseButton ref callbacks pos _ button keystate _ =
-  mouseButtonCallback callbacks ref button' keystate' pos
+callbackMouseButton ref callbacks _ button keystate _ =
+  whenWindow ref $ \glfwWin -> do
+  (posX, posY) <- GLFW.getCursorPos glfwWin
+  mouseButtonCallback callbacks ref button' keystate' posX posY
   where
     button'   = fromGLFW button
     keystate' = fromGLFW keystate
@@ -405,139 +410,139 @@ instance GLFWConv GLFW.MouseButtonState KeyState where
 instance GLFWConv GLFW.Key Key where
   fromGLFW key =
     case key of
-      GLFW.Key'Unknown -> KeyUnknown
-      GLFW.Key'Apostrophe -> KeyApostrophe
-      GLFW.Key'Comma -> KeyComma
-      GLFW.Key'Minus -> KeyMinus
-      GLFW.Key'Period -> KeyPeriod
-      GLFW.Key'Slash -> KeySlash
-      GLFW.Key'0 -> Key0
-      GLFW.Key'1 -> Key1
-      GLFW.Key'2 -> Key2
-      GLFW.Key'3 -> Key3
-      GLFW.Key'4 -> Key4
-      GLFW.Key'5 -> Key5
-      GLFW.Key'6 -> Key6
-      GLFW.Key'7 -> Key7
-      GLFW.Key'8 -> Key8
-      GLFW.Key'9 -> Key9
-      GLFW.Key'Semicolon -> KeySemicolon
-      GLFW.Key'Equal -> KeyEqual
-      GLFW.Key'A -> KeyA
-      GLFW.Key'B -> KeyB
-      GLFW.Key'C -> KeyC
-      GLFW.Key'D -> KeyD
-      GLFW.Key'E -> KeyE
-      GLFW.Key'F -> KeyF
-      GLFW.Key'G -> KeyG
-      GLFW.Key'H -> KeyH
-      GLFW.Key'I -> KeyI
-      GLFW.Key'J -> KeyJ
-      GLFW.Key'K -> KeyK
-      GLFW.Key'L -> KeyL
-      GLFW.Key'M -> KeyM
-      GLFW.Key'N -> KeyN
-      GLFW.Key'O -> KeyO
-      GLFW.Key'P -> KeyP
-      GLFW.Key'Q -> KeyQ
-      GLFW.Key'R -> KeyR
-      GLFW.Key'S -> KeyS
-      GLFW.Key'T -> KeyT
-      GLFW.Key'U -> KeyU
-      GLFW.Key'V -> KeyV
-      GLFW.Key'W -> KeyW
-      GLFW.Key'X -> KeyX
-      GLFW.Key'Y -> KeyY
-      GLFW.Key'Z -> KeyZ
-      GLFW.Key'LeftBracket -> KeyLeftBracket
-      GLFW.Key'Backslash -> KeyBackslash
-      GLFW.Key'RightBracket -> KeyRightBracket
-      GLFW.Key'GraveAccent -> KeyGraveAccent
-      GLFW.Key'World1 -> KeyWorld1
-      GLFW.Key'World2 -> KeyWorld2
-      GLFW.Key'Space       -> KeySpace
-      GLFW.Key'Escape      -> KeyEscape
-      GLFW.Key'Enter       -> KeyEnter
-      GLFW.Key'Tab         -> KeyTab
-      GLFW.Key'Backspace   -> KeyBackspace
-      GLFW.Key'Insert      -> KeyInsert
-      GLFW.Key'Delete      -> KeyDelete
-      GLFW.Key'Right       -> KeyRight
-      GLFW.Key'Left        -> KeyLeft
-      GLFW.Key'Up          -> KeyUp
-      GLFW.Key'Down        -> KeyDown
-      GLFW.Key'PageUp      -> KeyPageUp
-      GLFW.Key'PageDown    -> KeyPageDown
-      GLFW.Key'Home        -> KeyHome
-      GLFW.Key'End         -> KeyEnd
-      GLFW.Key'CapsLock -> KeyCapsLock
-      GLFW.Key'ScrollLock -> KeyScrollLock
-      GLFW.Key'NumLock -> KeyNumLock
-      GLFW.Key'PrintScreen -> KeyPrintScreen
-      GLFW.Key'Pause -> KeyPause
-      GLFW.Key'F1          -> KeyF1
-      GLFW.Key'F2          -> KeyF2
-      GLFW.Key'F3          -> KeyF3
-      GLFW.Key'F4          -> KeyF4
-      GLFW.Key'F5          -> KeyF5
-      GLFW.Key'F6          -> KeyF6
-      GLFW.Key'F7          -> KeyF7
-      GLFW.Key'F8          -> KeyF8
-      GLFW.Key'F9          -> KeyF9
-      GLFW.Key'F10         -> KeyF10
-      GLFW.Key'F11         -> KeyF11
-      GLFW.Key'F12         -> KeyF12
-      GLFW.Key'F13         -> KeyF13
-      GLFW.Key'F14         -> KeyF14
-      GLFW.Key'F15         -> KeyF15
-      GLFW.Key'F16         -> KeyF16
-      GLFW.Key'F17         -> KeyF17
-      GLFW.Key'F18         -> KeyF18
-      GLFW.Key'F19         -> KeyF19
-      GLFW.Key'F20         -> KeyF20
-      GLFW.Key'F21         -> KeyF21
-      GLFW.Key'F22         -> KeyF22
-      GLFW.Key'F23         -> KeyF23
-      GLFW.Key'F24         -> KeyF24
-      GLFW.Key'F25         -> KeyF25
-      GLFW.Key'Pad0        -> KeyPad0
-      GLFW.Key'Pad1        -> KeyPad1
-      GLFW.Key'Pad2        -> KeyPad2
-      GLFW.Key'Pad3        -> KeyPad3
-      GLFW.Key'Pad4        -> KeyPad4
-      GLFW.Key'Pad5        -> KeyPad5
-      GLFW.Key'Pad6        -> KeyPad6
-      GLFW.Key'Pad7        -> KeyPad7
-      GLFW.Key'Pad8        -> KeyPad8
-      GLFW.Key'Pad9        -> KeyPad9
-      GLFW.Key'PadDecimal  -> KeyPadDecimal
-      GLFW.Key'PadDivide   -> KeyPadDivide
-      GLFW.Key'PadMultiply -> KeyPadMultiply
-      GLFW.Key'PadSubtract -> KeyPadSubtract
-      GLFW.Key'PadAdd      -> KeyPadAdd
-      GLFW.Key'PadEnter    -> KeyPadEnter
-      GLFW.Key'PadEqual    -> KeyPadEqual
-      GLFW.Key'LeftShift -> KeyLeftShift
-      GLFW.Key'LeftControl -> KeyLeftControl
-      GLFW.Key'LeftAlt -> KeyLeftAlt
-      GLFW.Key'LeftSuper -> KeyLeftSuper
-      GLFW.Key'RightShift -> KeyRightShift
-      GLFW.Key'RightControl -> KeyRightControl
-      GLFW.Key'RightAlt -> KeyRightAlt
-      GLFW.Key'RightSuper -> KeyRightSuper
-      GLFW.Key'Menu -> KeyMenu
+      GLFW.Key'Unknown -> Key'Unknown
+      GLFW.Key'GraveAccent -> Key'GraveAccent
+      GLFW.Key'1 -> Key'1
+      GLFW.Key'2 -> Key'2
+      GLFW.Key'3 -> Key'3
+      GLFW.Key'4 -> Key'4
+      GLFW.Key'5 -> Key'5
+      GLFW.Key'6 -> Key'6
+      GLFW.Key'7 -> Key'7
+      GLFW.Key'8 -> Key'8
+      GLFW.Key'9 -> Key'9
+      GLFW.Key'0 -> Key'0
+      GLFW.Key'Minus -> Key'Minus
+      GLFW.Key'Equal -> Key'Equal
+      GLFW.Key'A -> Key'a
+      GLFW.Key'B -> Key'b
+      GLFW.Key'C -> Key'c
+      GLFW.Key'D -> Key'd
+      GLFW.Key'E -> Key'e
+      GLFW.Key'F -> Key'f
+      GLFW.Key'G -> Key'g
+      GLFW.Key'H -> Key'h
+      GLFW.Key'I -> Key'i
+      GLFW.Key'J -> Key'j
+      GLFW.Key'K -> Key'k
+      GLFW.Key'L -> Key'l
+      GLFW.Key'M -> Key'm
+      GLFW.Key'N -> Key'n
+      GLFW.Key'O -> Key'o
+      GLFW.Key'P -> Key'p
+      GLFW.Key'Q -> Key'q
+      GLFW.Key'R -> Key'r
+      GLFW.Key'S -> Key's
+      GLFW.Key'T -> Key't
+      GLFW.Key'U -> Key'u
+      GLFW.Key'V -> Key'v
+      GLFW.Key'W -> Key'w
+      GLFW.Key'X -> Key'x
+      GLFW.Key'Y -> Key'y
+      GLFW.Key'Z -> Key'z
+      GLFW.Key'LeftBracket -> Key'LeftBracket
+      GLFW.Key'RightBracket -> Key'RightBracket
+      GLFW.Key'Backslash -> Key'Backslash
+      GLFW.Key'Semicolon -> Key'Semicolon
+      GLFW.Key'Apostrophe -> Key'Apostrophe
+      GLFW.Key'Comma -> Key'Comma
+      GLFW.Key'Period -> Key'Period
+      GLFW.Key'Slash -> Key'Slash
+      GLFW.Key'World1 -> Key'World1
+      GLFW.Key'World2 -> Key'World2
+      GLFW.Key'Space       -> Key'Space
+      GLFW.Key'Escape      -> Key'Escape
+      GLFW.Key'Enter       -> Key'Enter
+      GLFW.Key'Tab         -> Key'Tab
+      GLFW.Key'Backspace   -> Key'Backspace
+      GLFW.Key'Insert      -> Key'Insert
+      GLFW.Key'Delete      -> Key'Delete
+      GLFW.Key'Right       -> Key'Right
+      GLFW.Key'Left        -> Key'Left
+      GLFW.Key'Up          -> Key'Up
+      GLFW.Key'Down        -> Key'Down
+      GLFW.Key'PageUp      -> Key'PageUp
+      GLFW.Key'PageDown    -> Key'PageDown
+      GLFW.Key'Home        -> Key'Home
+      GLFW.Key'End         -> Key'End
+      GLFW.Key'CapsLock -> Key'CapsLock
+      GLFW.Key'ScrollLock -> Key'ScrollLock
+      GLFW.Key'NumLock -> Key'NumLock
+      GLFW.Key'PrintScreen -> Key'PrintScreen
+      GLFW.Key'Pause -> Key'Pause
+      GLFW.Key'F1          -> Key'F1
+      GLFW.Key'F2          -> Key'F2
+      GLFW.Key'F3          -> Key'F3
+      GLFW.Key'F4          -> Key'F4
+      GLFW.Key'F5          -> Key'F5
+      GLFW.Key'F6          -> Key'F6
+      GLFW.Key'F7          -> Key'F7
+      GLFW.Key'F8          -> Key'F8
+      GLFW.Key'F9          -> Key'F9
+      GLFW.Key'F10         -> Key'F10
+      GLFW.Key'F11         -> Key'F11
+      GLFW.Key'F12         -> Key'F12
+      GLFW.Key'F13         -> Key'F13
+      GLFW.Key'F14         -> Key'F14
+      GLFW.Key'F15         -> Key'F15
+      GLFW.Key'F16         -> Key'F16
+      GLFW.Key'F17         -> Key'F17
+      GLFW.Key'F18         -> Key'F18
+      GLFW.Key'F19         -> Key'F19
+      GLFW.Key'F20         -> Key'F20
+      GLFW.Key'F21         -> Key'F21
+      GLFW.Key'F22         -> Key'F22
+      GLFW.Key'F23         -> Key'F23
+      GLFW.Key'F24         -> Key'F24
+      GLFW.Key'F25         -> Key'F25
+      GLFW.Key'Pad0        -> Key'Pad0
+      GLFW.Key'Pad1        -> Key'Pad1
+      GLFW.Key'Pad2        -> Key'Pad2
+      GLFW.Key'Pad3        -> Key'Pad3
+      GLFW.Key'Pad4        -> Key'Pad4
+      GLFW.Key'Pad5        -> Key'Pad5
+      GLFW.Key'Pad6        -> Key'Pad6
+      GLFW.Key'Pad7        -> Key'Pad7
+      GLFW.Key'Pad8        -> Key'Pad8
+      GLFW.Key'Pad9        -> Key'Pad9
+      GLFW.Key'PadDecimal  -> Key'PadDecimal
+      GLFW.Key'PadDivide   -> Key'PadDivide
+      GLFW.Key'PadMultiply -> Key'PadMultiply
+      GLFW.Key'PadSubtract -> Key'PadSubtract
+      GLFW.Key'PadAdd      -> Key'PadAdd
+      GLFW.Key'PadEnter    -> Key'PadEnter
+      GLFW.Key'PadEqual    -> Key'PadEqual
+      GLFW.Key'LeftShift -> Key'LeftShift
+      GLFW.Key'LeftControl -> Key'LeftControl
+      GLFW.Key'LeftAlt -> Key'LeftAlt
+      GLFW.Key'LeftSuper -> Key'LeftSuper
+      GLFW.Key'RightShift -> Key'RightShift
+      GLFW.Key'RightControl -> Key'RightControl
+      GLFW.Key'RightAlt -> Key'RightAlt
+      GLFW.Key'RightSuper -> Key'RightSuper
+      GLFW.Key'Menu -> Key'Menu
 
 instance GLFWConv GLFW.MouseButton MouseButton where
   fromGLFW mouse
    = case mouse of
-        GLFW.MouseButton'1 -> LeftButton
-        GLFW.MouseButton'2 -> RightButton
-        GLFW.MouseButton'3 -> MiddleButton
-        GLFW.MouseButton'4 -> AdditionalButton 3
-        GLFW.MouseButton'5 -> AdditionalButton 4
-        GLFW.MouseButton'6 -> AdditionalButton 5
-        GLFW.MouseButton'7 -> AdditionalButton 6
-        GLFW.MouseButton'8 -> AdditionalButton 7
+        GLFW.MouseButton'1 -> Left'Button
+        GLFW.MouseButton'2 -> Right'Button
+        GLFW.MouseButton'3 -> Middle'Button
+        GLFW.MouseButton'4 -> Additional'Button 3
+        GLFW.MouseButton'5 -> Additional'Button 4
+        GLFW.MouseButton'6 -> Additional'Button 5
+        GLFW.MouseButton'7 -> Additional'Button 6
+        GLFW.MouseButton'8 -> Additional'Button 7
 
 
 joysticks :: [GLFW.Joystick]

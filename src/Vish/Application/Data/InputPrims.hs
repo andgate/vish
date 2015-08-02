@@ -199,16 +199,16 @@ shiftKey :: Key -> Key
 shiftKey key =
   case key of
     Key'GraveAccent -> Key'Tilde
-    Key'0 -> Key'Exclaim
-    Key'1 -> Key'At
-    Key'2 -> Key'Hash
-    Key'3 -> Key'Dollar
-    Key'4 -> Key'Percent
-    Key'5 -> Key'Caret
-    Key'6 -> Key'Ampersand
-    Key'7 -> Key'Asterisk
-    Key'8 -> Key'LeftParens
-    Key'9 -> Key'RightParens
+    Key'1 -> Key'Exclaim
+    Key'2 -> Key'At
+    Key'3 -> Key'Hash
+    Key'4 -> Key'Dollar
+    Key'5 -> Key'Percent
+    Key'6 -> Key'Caret
+    Key'7 -> Key'Ampersand
+    Key'8 -> Key'Asterisk
+    Key'9 -> Key'LeftParens
+    Key'0 -> Key'RightParens
     Key'Minus -> Key'Underscore
     Key'Equal -> Key'Plus
     Key'a -> Key'A
