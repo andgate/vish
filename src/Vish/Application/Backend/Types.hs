@@ -1,15 +1,14 @@
 {-# LANGUAGE Rank2Types #-}
-
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Vish.Application.Backend.Types
   ( module Vish.Application.Backend.Types
   , module Vish.Application.Data.Window
-  , module Vish.Application.Data.Input
   )
 where
 
 
 import Vish.Application.Data.Window
-import Vish.Application.Data.Input
+import qualified Vish.Application.Data.Input as I
 
 import Control.Lens
 import Data.IORef
@@ -58,7 +57,17 @@ class Backend a where
         -- | Function that puts the current thread to sleep for 'n' seconds.
         sleep                      :: IORef a -> Double -> IO ()
 
-data RunState = Pause | Run
+data InputState = Up | Down
+
+class ConvBackend a b where
+  fromBackend :: a -> b
+
+instance ConvBackend InputState I.InputState where
+  fromBackend inputState =
+    case inputState of
+      Up -> I.Up
+      Down -> I.Down
+
 
 -- The callbacks should work for all backends. We pass a reference to the
 -- backend state so that the callbacks have access to the class dictionary and
@@ -80,13 +89,13 @@ type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
 type ReshapeCallback       = forall a . Backend a => IORef a -> Int -> Int -> IO ()
 
 -- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed
-type KeyboardCallback = forall a . Backend a => IORef a -> Key -> KeyState -> IO ()
+type KeyboardCallback = forall a . Backend a => IORef a -> I.Key -> InputState -> IO ()
 
 -- | Arguments: (PosX,PosY) in pixels.
 type MouseMoveCallback        = forall a . Backend a => IORef a -> Double -> Double -> IO ()
 
 -- | Arguments: Mouse button, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
-type MouseButtonCallback = forall a . Backend a => IORef a -> MouseButton -> KeyState -> Double -> Double -> IO ()
+type MouseButtonCallback = forall a . Backend a => IORef a -> I.MouseButton -> InputState -> Double -> Double -> IO ()
 
 -- | Arguments: (ScrollX, ScrollY)
 type ScrollCallback = forall a. Backend a => IORef a -> Double -> Double -> IO ()

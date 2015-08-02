@@ -5,6 +5,8 @@ module Vish.Application.Backend.GLFW
 where
 
 import Vish.Application.Backend.Types
+import Vish.Application.Data.Input (Key (..), MouseButton (..))
+import qualified Vish.Application.Data.Input as I
 
 import Control.Concurrent
 import Control.Lens
@@ -42,11 +44,13 @@ glfwStateInit =
     , _glfwWindow    = Nothing
     }
 
-whenWindow :: IORef GLFWState -> (GLFW.Window -> IO ()) -> IO ()
+whenWindow :: IORef GLFWState -> (GLFW.Window -> IO a) -> IO (Maybe a)
 whenWindow ref f = do
   maybeWindow <- liftM (^. glfwWindow) (readIORef ref)
-  forM_ maybeWindow f
+  forM maybeWindow f
 
+whenWindow_ :: IORef GLFWState -> (GLFW.Window -> IO a) -> IO ()
+whenWindow_ ref = void . whenWindow ref
 
 instance Backend GLFWState where
   initBackendState           = glfwStateInit
@@ -68,9 +72,10 @@ instance Backend GLFWState where
       ]
 
   runMainLoop                = runMainLoopGLFW
-  getWindowDimensions        = getWindowDimensionsGLFW
+  getWindowDimensions ref    = whenWindow ref GLFW.getWindowSize
+  --getMousePosition ref       = whenWindow ref GLFW.getCursorPos
 
-  elapsedTime                = elapsedTimeGLFW
+  elapsedTime _              = liftM (fromMaybe 0) GLFW.getTime
   sleep _ =
     threadDelay . round . (* 1000000)
 
@@ -252,7 +257,7 @@ callbackDisplay ref callbacks = do
 --   Used to control pause/resume.
 installWindowFocusCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installWindowFocusCallbackGLFW ref callbacks =
-  whenWindow ref $ \glfwWin ->
+  whenWindow_ ref $ \glfwWin ->
     GLFW.setWindowFocusCallback  glfwWin $ Just (callbackWindowFocus ref callbacks)
 
 callbackWindowFocus :: IORef GLFWState -> Callbacks
@@ -270,7 +275,7 @@ callbackWindowFocus ref callbacks _ focusState =
 --   We can do some cleanup here.
 installWindowCloseCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installWindowCloseCallbackGLFW ref callbacks =
-  whenWindow ref $ \glfwWin ->
+  whenWindow_ ref $ \glfwWin ->
     GLFW.setWindowCloseCallback glfwWin $ Just (callbackWindowClose ref callbacks)
 
 callbackWindowClose :: IORef GLFWState -> Callbacks -> GLFW.Window -> IO ()
@@ -281,7 +286,7 @@ callbackWindowClose ref callbacks _ =
 -- | Callback for when the user reshapes the window.
 installReshapeCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installReshapeCallbackGLFW ref callbacks =
-  whenWindow ref $ \glfwWin ->
+  whenWindow_ ref $ \glfwWin ->
     GLFW.setWindowSizeCallback glfwWin $ Just (callbackReshape ref callbacks)
 
 callbackReshape :: Backend a => IORef a -> Callbacks
@@ -293,26 +298,26 @@ callbackReshape ref callbacks _ =
 -- Keyboard Callback ----------------------------------------------------------
 installKeyboardCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installKeyboardCallbackGLFW ref callbacks =
-  whenWindow ref $ \glfwWin ->
+  whenWindow_ ref $ \glfwWin ->
     GLFW.setKeyCallback glfwWin $ Just (callbackKeyboard ref callbacks)
 
 callbackKeyboard :: IORef GLFWState -> Callbacks
                   -> GLFW.Window -> GLFW.Key -> Int
                   -> GLFW.KeyState -> GLFW.ModifierKeys -> IO ()
-callbackKeyboard ref callbacks _ key scancode keystate mods =
-  keyboardCallback callbacks ref key' keystate'
+callbackKeyboard ref callbacks _ key scancode state mods =
+  keyboardCallback callbacks ref key' state'
   where
-    keystate' = fromGLFW keystate
+    state' = fromGLFW state
     key' =
       if GLFW.modifierKeysShift mods
-        then shiftKey . fromGLFW $ key
+        then I.shiftKey . fromGLFW $ key
         else fromGLFW key
 
 
 -- Mouse Movement Callback ----------------------------------------------------
 installMouseMoveCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installMouseMoveCallbackGLFW ref callbacks =
-  whenWindow ref $ \glfwWin ->
+  whenWindow_ ref $ \glfwWin ->
     GLFW.setCursorPosCallback glfwWin $ Just (callbackMouseMove ref callbacks)
 
 callbackMouseMove :: IORef GLFWState -> Callbacks -> GLFW.Window
@@ -324,25 +329,25 @@ callbackMouseMove ref callbacks _ =
 -- Mouse Button Callback ------------------------------------------------------
 installMouseButtonCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installMouseButtonCallbackGLFW ref callbacks =
-  whenWindow ref $ \glfwWin ->
+  whenWindow_ ref $ \glfwWin ->
     GLFW.setMouseButtonCallback glfwWin $ Just (callbackMouseButton ref callbacks)
 
 callbackMouseButton :: IORef GLFWState -> Callbacks
                     -> GLFW.Window -> GLFW.MouseButton -> GLFW.MouseButtonState
                     -> GLFW.ModifierKeys -> IO ()
-callbackMouseButton ref callbacks _ button keystate _ =
-  whenWindow ref $ \glfwWin -> do
+callbackMouseButton ref callbacks _ button state _ =
+  whenWindow_ ref $ \glfwWin -> do
   (posX, posY) <- GLFW.getCursorPos glfwWin
-  mouseButtonCallback callbacks ref button' keystate' posX posY
+  mouseButtonCallback callbacks ref button' state' posX posY
   where
     button'   = fromGLFW button
-    keystate' = fromGLFW keystate
+    state' = fromGLFW state
 
 
 -- Scroll Callback ------------------------------------------------------------
 installScrollCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installScrollCallbackGLFW ref callbacks =
-  whenWindow ref $ \glfwWin ->
+  whenWindow_ ref $ \glfwWin ->
     GLFW.setScrollCallback glfwWin $ Just (callbackScroll ref callbacks)
 
 callbackScroll :: IORef GLFWState -> Callbacks -> GLFW.Window
@@ -354,7 +359,7 @@ callbackScroll ref callbacks _ =
 -- Main Loop ------------------------------------------------------------------
 runMainLoopGLFW :: IORef GLFWState -> IO ()
 runMainLoopGLFW ref =
-  whenWindow ref $ \glfwWin -> do
+  whenWindow_ ref $ \glfwWin -> do
     winShouldClose <- GLFW.windowShouldClose glfwWin
     winFocus <- GLFW.getWindowFocused glfwWin
     if winShouldClose
@@ -373,41 +378,25 @@ runMainLoopGLFW ref =
 
         runMainLoopGLFW ref
 
--- Get window dimensions ------------------------------------------------------
-getWindowDimensionsGLFW :: IORef GLFWState -> IO (Maybe (Int, Int))
-getWindowDimensionsGLFW ref = do
-  maybeWindow <- liftM (^. glfwWindow) (readIORef ref)
-  case maybeWindow of
-    Nothing -> return Nothing
-    Just glfwWin -> do
-      size <- GLFW.getWindowSize glfwWin
-      return . Just $ size
-
-
--- Get the elapsed time -------------------------------------------------------
-elapsedTimeGLFW :: IORef GLFWState -> IO Double
-elapsedTimeGLFW _ = do
-  maybeTime <- GLFW.getTime
-  return $ fromMaybe 0 maybeTime
 
 -- GLFW type Conversion -------------------------------------------------------
 class GLFWConv a b where
   fromGLFW :: a -> b
 
-instance GLFWConv GLFW.KeyState KeyState where
+instance GLFWConv GLFW.KeyState InputState where
   fromGLFW keystate =
     case keystate of
       GLFW.KeyState'Pressed   -> Down
       GLFW.KeyState'Repeating -> Down
       GLFW.KeyState'Released  -> Up
 
-instance GLFWConv GLFW.MouseButtonState KeyState where
+instance GLFWConv GLFW.MouseButtonState InputState where
   fromGLFW keystate =
     case keystate of
       GLFW.MouseButtonState'Pressed   -> Down
       GLFW.MouseButtonState'Released  -> Up
 
-instance GLFWConv GLFW.Key Key where
+instance GLFWConv GLFW.Key I.Key where
   fromGLFW key =
     case key of
       GLFW.Key'Unknown -> Key'Unknown

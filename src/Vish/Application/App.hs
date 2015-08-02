@@ -45,7 +45,7 @@ playWithBackend backend world = do
   createWindow backend window callbacks
 
 displayUpdate :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
-displayUpdate appRef backendStateRef = do
+displayUpdate appRef backendRef = do
   appUpdate appRef
   pic <- appDraw appRef
 
@@ -54,6 +54,8 @@ displayUpdate appRef backendStateRef = do
   displayPicture texCache pic
 
   appPostUpdate appRef
+
+  updateInput appRef backendRef
 
 resizeWindow :: (AppListener w, Backend b) => AppRef w -> IORef b -> Int -> Int -> IO ()
 resizeWindow app _ =
@@ -75,8 +77,9 @@ data InputPrinter = InputPrinter
 
 instance InputListener InputPrinter where
   keyPressed _ key = print key
-  mouseButtonClicked _ button x y = putStrLn $ show button ++ ": " ++ show (x, y)
-  mouseMoved _ x y = putStrLn $ "Mouse Moved: " ++ show (x,y)
+  keyHeld _ key dt = putStrLn $ show key ++ " held for " ++ show dt
+  mouseClickDragged _ button dt (x, y) = putStrLn $ show button ++ ": " ++ show (x, y) ++ " for " ++ show dt
+  --mousePositioned _ x y = putStrLn $ "Mouse Moved: " ++ show (x,y)
   scrolled _ x y = putStrLn $ "Scrolled: " ++ show (x,y)
 
 registerInputListener :: InputListener l => AppRef w -> l -> IO ()

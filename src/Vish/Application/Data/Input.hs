@@ -2,16 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Vish.Application.Data.Input
   ( module Vish.Application.Data.InputPrims
-  , Registrable (..)
-  , register
-  , InputListener (..)
-  , Input (..)
-  , KeyTable
-  , ButtonTable
-  , inputKeyTable
-  , inputButtonTable
-  , inputListeners
-  , mkInput
+  , module Vish.Application.Data.Input
   )
 where
 
@@ -19,6 +10,8 @@ import Vish.Application.Data.InputPrims
 
 import Control.Lens
 import Data.IORef
+import Data.Set (Set)
+import qualified Data.Set as Set
 import qualified Data.HashTable.IO as H
 
 data Registrable = forall a . InputListener a => MkInputListener a
@@ -33,34 +26,42 @@ class InputListener a where
   keyPressed :: a -> Key -> IO ()
   keyPressed _ _ = return ()
 
-  keyHeld :: a -> Key -> IO ()
-  keyHeld _ _ = return ()
+  keyHeld :: a -> Key -> Double -> IO ()
+  keyHeld _ _ dt = return ()
 
   keyTyped :: a -> Char -> IO ()
   keyTyped _ _ = return ()
 
-  mouseMoved :: a -> Double -> Double -> IO ()
-  mouseMoved _ _ _ = return ()
+  mousePositioned :: a -> (Double, Double) -> IO ()
+  mousePositioned _ (posX, posY) = return ()
 
-  mouseButtonReleased :: a -> MouseButton -> Double -> Double ->  IO ()
-  mouseButtonReleased _ _ _ _ = return ()
+  mouseMoved :: a -> (Double, Double) -> IO ()
+  mouseMoved _ (velX, velY) = return ()
 
-  mouseButtonClicked :: a -> MouseButton -> Double -> Double -> IO ()
-  mouseButtonClicked _ _ _ _ = return ()
+  mouseReleased :: a -> MouseButton -> (Double, Double) ->  IO ()
+  mouseReleased _ _ (posX, posY) = return ()
 
-  mouseButtonHeld :: a -> MouseButton -> Double -> Double -> IO ()
-  mouseButtonHeld _ _ _ _ = return ()
+  mouseClicked :: a -> MouseButton -> (Double, Double) -> IO ()
+  mouseClicked _ _ (posX, posY) = return ()
+
+  mouseClickHeld :: a -> MouseButton -> Double -> (Double, Double) -> IO ()
+  mouseClickHeld _ _ dt (posX, posY) = return ()
+
+  mouseClickDragged :: a -> MouseButton -> Double -> (Double, Double) -> IO ()
+  mouseClickDragged _ _ dt (velX, velY) = return ()
 
   scrolled :: a -> Double -> Double -> IO ()
   scrolled _ _ _ = return ()
 
-type KeyTable = H.BasicHashTable Key KeyState
-type ButtonTable = H.BasicHashTable MouseButton KeyState
+type InputTable k  = H.BasicHashTable k InputState
+type KeyTable      = InputTable Key
+type ButtonTable   = InputTable MouseButton
 
 data Input = Input
   { _inputKeyTable :: KeyTable
   , _inputButtonTable :: ButtonTable
   , _inputListeners :: [Registrable]
+  , _inputMousePosition :: (Double, Double)
   }
 
 makeLenses ''Input
@@ -69,4 +70,12 @@ mkInput :: IO Input
 mkInput = do
   keyTable <- H.new
   buttonTable <- H.new
-  return $ Input keyTable buttonTable []
+  let listeners = []
+      mousePos = (0,0)
+  return
+    Input
+    { _inputKeyTable = keyTable
+    , _inputButtonTable = buttonTable
+    , _inputListeners = listeners
+    , _inputMousePosition = mousePos
+    }

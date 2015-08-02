@@ -9,8 +9,13 @@ import Data.Hashable
 -- The actual events provided by the backends are converted to this form
 -- by the backend module.
 
-data KeyState = Down | Up | Held
-  deriving (Show, Eq, Ord)
+data InputState =
+    Down
+  | Up
+  | Held Double Double -- Time started, time elapsed
+  deriving (Show, Eq, Ord, Generic)
+
+instance Hashable InputState
 
 data MouseButton =
     Left'Button

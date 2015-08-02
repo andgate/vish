@@ -4,6 +4,8 @@ module Vish.Application.Backend.GLUT
 where
 
 import Vish.Application.Backend.Types
+import Vish.Application.Data.Input (Key (..), MouseButton (..))
+import qualified Vish.Application.Data.Input as I
 
 import Control.Concurrent
 import Control.Lens
@@ -23,13 +25,13 @@ import qualified System.Mem  as System
 --   so this data type is empty.
 data GLUTState =
   GLUTState
-  { _glutisPlaying :: Bool }
+  { _glutisPlaying :: Bool
+  }
 
 makeLenses ''GLUTState
 
 initGLUTState :: GLUTState
 initGLUTState  = GLUTState True
-
 
 instance Backend GLUTState where
   initBackendState  = initGLUTState
@@ -171,6 +173,7 @@ callbackDisplay ref callbacks = do
     -- Don't report errors by default.
     -- The windows OpenGL implementation seems to complain for no reason.
     --  GLUT.reportErrors
+    GLUT.postRedisplay Nothing
 
 -- App Status Callback -----------------------------------------------------
 -- | Callback for when the app is paused/resumed.
@@ -215,13 +218,13 @@ installKeyboardCallbackGLUT ref callbacks = do
   GLUT.specialCallback $= Just (callbackSpecialKey ref callbacks Down)
   GLUT.specialUpCallback $= Just (callbackSpecialKey ref callbacks Up)
 
-callbackKeyboard :: IORef GLUTState -> Callbacks -> KeyState
+callbackKeyboard :: IORef GLUTState -> Callbacks -> InputState
                   -> Char -> GLUT.Position -> IO ()
 callbackKeyboard ref callbacks state c _ =
   keyboardCallback callbacks ref key state
   where key = fromGLUT c
 
-callbackSpecialKey :: IORef GLUTState -> Callbacks -> KeyState
+callbackSpecialKey :: IORef GLUTState -> Callbacks -> InputState
                   -> GLUT.SpecialKey -> GLUT.Position -> IO ()
 callbackSpecialKey ref callbacks state key _ =
   keyboardCallback callbacks ref key' state
@@ -246,15 +249,15 @@ installMouseCallbackGLUT ref callbacks =
 
 callbackMouse :: IORef GLUTState -> Callbacks -> GLUT.MouseButton
                   -> GLUT.KeyState -> GLUT.Position -> IO ()
-callbackMouse ref callbacks button keystate (GLUT.Position posX posY) =
+callbackMouse ref callbacks button state (GLUT.Position posX posY) =
   case button of
     GLUT.WheelUp -> scrollCallback callbacks ref 0 1
     GLUT.WheelDown -> scrollCallback callbacks ref 0 (-1)
     _ ->
-      mouseButtonCallback callbacks ref button' keystate' posX' posY'
+      mouseButtonCallback callbacks ref button' state' posX' posY'
   where
     button' = fromGLUT button
-    keystate'  = fromGLUT keystate
+    state' = fromGLUT state
     posX' = fromIntegral posX
     posY' = fromIntegral posY
 
@@ -411,7 +414,7 @@ instance GLUTConv GLUT.MouseButton MouseButton where
       _                         -> Unknown'Button
 
 -- | Convert GLUTs key states to our internal ones.
-instance GLUTConv GLUT.KeyState KeyState where
+instance GLUTConv GLUT.KeyState InputState where
   fromGLUT state =
     case state of
       GLUT.Down       -> Down
