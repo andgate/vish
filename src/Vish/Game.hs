@@ -1,6 +1,7 @@
 module Vish.Game where
 
 import Vish.Script
+import Vish.Interpreter
 import Vish.Application.App
 import Vish.Application.Data.App
 
@@ -9,25 +10,37 @@ import qualified Vish.Graphics.Data.Picture as Pic
 
 import Control.Lens
 import Control.Monad
+import Data.Monoid
 import Data.IORef
+import qualified Data.List.Zipper as Z
 
 data GameWorld = GameWorld
-  { _gameScript :: Script,
-    _currPic :: Picture
+  { _gameCommands :: Z.Zipper ScriptCommand
+  , _gameBackgroundPic :: Picture
+  , _gameStagePic :: Picture
   }
 
 mkGameWorld :: Script -> GameWorld
 mkGameWorld script =
+  let script' = scriptToZipper script
+  in
   GameWorld
-  { _gameScript = script,
-    _currPic = Pic.blank
+  { _gameCommands = script'
+  , _gameBackgroundPic = Pic.blank
+  , _gameStagePic = Pic.blank
   }
 
 makeLenses ''GameWorld
 
 instance AppListener GameWorld where
-  appDraw app =
-    liftM (^.appWorld.currPic) (getApp app)
+  appCreate = loadScript
+  appUpdate = scriptUpdate
+
+  appDraw app = do
+    world <- liftM (^.appWorld) (getApp app)
+    let background = world^.gameBackgroundPic
+        stage = world^.gameStagePic
+    return $ stage <> background
 
   appDispose _ =
     print "Disposing app"
@@ -40,3 +53,35 @@ instance AppListener GameWorld where
 
 runScript :: Script -> IO ()
 runScript = play . mkGameWorld
+
+scriptUpdate :: AppRef GameWorld -> IO ()
+scriptUpdate appRef = do
+  world <- liftM (^.appWorld) (readIORef appRef)
+  let commands = world ^. gameCommands
+      commands' = Z.right commands
+      maybeCommand = Z.safeCursor commands
+
+  -- Save the freshly moved zipper
+  modifyIORef appRef $ appWorld.gameCommands .~ commands'
+
+  case maybeCommand of
+    Nothing -> quitApp appRef
+    Just command -> commandUpdate appRef command
+
+commandUpdate :: AppRef GameWorld -> ScriptCommand -> IO ()
+commandUpdate appRef command =
+  case command of
+    Done -> quitApp appRef
+    SetBackground name _ -> gameSetBackground appRef name
+    Pause t _ -> appDelay t
+    _ -> print command
+
+loadScript :: AppRef GameWorld -> IO ()
+loadScript appRef = do
+  texCache <- liftM (^.appGfx.gfxTexCache) (getApp appRef)
+  commands <- liftM (^.appWorld.gameCommands) (getApp appRef)
+  initScript texCache $ Z.toList commands
+
+gameSetBackground :: AppRef GameWorld -> Name -> IO ()
+gameSetBackground appRef name =
+  modifyIORef appRef $ appWorld.gameBackgroundPic .~ Pic.image name

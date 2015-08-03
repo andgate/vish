@@ -3,11 +3,13 @@ module Vish.Application.App where
 import           Vish.Application.Data.App
 import           Vish.Application.Data.Input
 import           Vish.Application.Data.Window
+import           Vish.Application.Backend
 import           Vish.Application.Input
 import           Vish.Application.Window
-import           Vish.Application.Backend
 import           Vish.Graphics.Picture
 
+
+import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.IORef
@@ -44,6 +46,14 @@ playWithBackend backend world = do
 
   createWindow backend window callbacks
 
+quitApp :: AppRef a -> IO ()
+quitApp appRef =
+  modifyIORef appRef $ appStatus .~ AppQuit
+
+appDelay :: Double -> IO ()
+appDelay s = threadDelay ms
+  where ms = round $ s * 1000000
+
 displayUpdate :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 displayUpdate appRef backendRef = do
   updateInput appRef backendRef
@@ -56,6 +66,14 @@ displayUpdate appRef backendRef = do
 
   appPostUpdate appRef
 
+  handleAppStatus appRef backendRef
+
+handleAppStatus :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
+handleAppStatus appRef backendRef = do
+  shouldQuit <- liftM (^.appStatus) (readIORef appRef)
+  case shouldQuit of
+    AppPlay -> return ()
+    AppQuit -> exitBackend backendRef
 
 resizeWindow :: (AppListener w, Backend b) => AppRef w -> IORef b -> Int -> Int -> IO ()
 resizeWindow app _ =

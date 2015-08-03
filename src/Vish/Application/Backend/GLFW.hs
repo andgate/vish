@@ -279,8 +279,9 @@ installWindowCloseCallbackGLFW ref callbacks =
     GLFW.setWindowCloseCallback glfwWin $ Just (callbackWindowClose ref callbacks)
 
 callbackWindowClose :: IORef GLFWState -> Callbacks -> GLFW.Window -> IO ()
-callbackWindowClose ref callbacks _ =
+callbackWindowClose ref callbacks _ = do
   closeCallback callbacks ref
+  exitBackend ref
 
 -- Reshape --------------------------------------------------------------------
 -- | Callback for when the user reshapes the window.

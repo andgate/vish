@@ -199,6 +199,11 @@ installWindowCloseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
 installWindowCloseCallbackGLUT ref callbacks =
   GLUT.closeCallback $= (Just $ closeCallback callbacks ref)
 
+callbackWindowClose :: IORef GLUTState -> Callbacks -> IO ()
+callbackWindowClose ref callbacks = do
+  closeCallback callbacks ref
+  exitBackend ref
+
 
 -- Reshape Callback -----------------------------------------------------------
 installReshapeCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()

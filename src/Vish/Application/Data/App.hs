@@ -1,3 +1,4 @@
+{-# LANGUAGE Rank2Types #-}
 module Vish.Application.Data.App where
 
 import Control.Lens
@@ -11,7 +12,7 @@ import Vish.Graphics.Texture
 
 type AppRef w = IORef (App w)
 
-getApp :: AppRef w -> IO (App w)
+getApp :: AppListener w => AppRef w -> IO (App w)
 getApp = readIORef
 
 class AppListener w where
@@ -43,7 +44,10 @@ data App w = App
   { _appGfx :: Gfx
   , _appInput :: Input
   , _appWorld :: w
+  , _appStatus :: AppStatus
   }
+
+data AppStatus = AppPlay | AppQuit
 
 data Gfx = Gfx
   { _gfxTexCache :: TexCache
@@ -54,9 +58,10 @@ makeLenses ''Gfx
 
 mkApp :: AppListener w => w -> IO (App w)
 mkApp world = do
-  gfx <- mkGfx
-  input <- mkInput
-  return $ App gfx input world
+  gfx       <- mkGfx
+  input     <- mkInput
+  let status = AppPlay
+  return $ App gfx input world status
 
 mkGfx :: IO Gfx
 mkGfx = do

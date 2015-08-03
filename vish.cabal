@@ -51,6 +51,7 @@ library
                       , hashable >= 1.2.3.3 && < 2
                       , yaml >= 0.8 && < 1
                       , unordered-containers >= 0.2 && < 0.3
+                      , ListZipper == 1.2.0.2
 
   default-extensions: OverloadedStrings
                       , UnicodeSyntax

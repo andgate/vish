@@ -12,12 +12,16 @@ import Control.Monad.Free
 import qualified Data.Text as T
 import qualified Data.Attoparsec.Text as P
 
+import qualified Data.List.Zipper as Z
+
 type Flags = H.BasicHashTable String Bool
 type Background = String
 type Name = String
 type Expression = String
 
 type Actor = (Name, Expression)
+
+type ScriptCommand = Command ()
 
 type Script = Free Command ()
 
@@ -26,7 +30,7 @@ data Command next =
   | ShowActor Actor next
   | ShowActors Actor Actor next
   | HideActors next
-  | Pause Float next
+  | Pause Double next
   | SetBackground Background next
   | Speak Name String next
   | SetScene Scene next
@@ -48,7 +52,7 @@ showActors l e1 r e2 =
 hideActors :: Script
 hideActors = liftF $ HideActors ()
 
-pause :: Float -> Script
+pause :: Double -> Script
 pause s = liftF $ Pause s ()
 
 setBackground :: Background -> Script
@@ -113,17 +117,20 @@ maybeNextCommand (Pure _) = Nothing
 maybeNextCommand (Free Done) = Nothing
 maybeNextCommand s = Just $ nextCommand s
 
-scriptToList :: Script -> [Command ()]
+scriptToList :: Script -> [ScriptCommand]
 scriptToList = List.unfoldr maybeNextCommand
 
-getActors :: Script -> [Actor]
+scriptToZipper :: Script -> Z.Zipper ScriptCommand
+scriptToZipper = Z.fromList . scriptToList
+
+getActors :: [ScriptCommand] -> [Actor]
 getActors = S.toList . foldr S.insert S.empty . extractActors
 
 actorTag :: (Name, Expression) -> String
 actorTag (name, expr) = name ++ "_" ++ expr
 
-extractActors :: Script -> [Actor]
-extractActors = concatMap cmdToActors . scriptToList
+extractActors :: [ScriptCommand] -> [Actor]
+extractActors = concatMap cmdToActors
 
 cmdToActors :: Command () -> [Actor]
 cmdToActors (ShowActor c _) =
@@ -135,11 +142,11 @@ cmdToActors (Speak name msg _) =
 cmdToActors _ =
   []
 
-getBgs :: Script -> [Background]
+getBgs :: [ScriptCommand] -> [Background]
 getBgs = S.toList . foldr S.insert S.empty . extractBgs
 
-extractBgs :: Script -> [Background]
-extractBgs = mapMaybe cmdToBg . scriptToList
+extractBgs :: [ScriptCommand] -> [Background]
+extractBgs = mapMaybe cmdToBg
 
 cmdToBg :: Command () -> Maybe Background
 cmdToBg (SetBackground bg _) = Just bg
@@ -189,44 +196,3 @@ parseActorMsg msg =
       str <- P.takeWhile1 (/= '*')
       P.char '*'
       return . ActorExpression . T.unpack $ str
-
-printScript :: Script -> IO ()
-printScript = iterM printCommand
-
-printCommand :: Command (IO ()) -> IO ()
-printCommand cmd =
-  case cmd of
-    ShowActor c next -> do
-      putStrLn $ "Showing " ++ show c
-      next
-    ShowActors l r next -> do
-      putStrLn $ "Showing " ++ show l ++ " and " ++ show r
-      next
-    HideActors next -> do
-      putStrLn "Hiding actors."
-      next
-    Pause s next -> do
-      putStrLn $ "Pausing for " ++ show s ++ " seconds."
-      next
-    SetBackground bg next -> do
-      putStrLn $ "Background set to " ++ show bg ++ "."
-      next
-    Speak c str next -> do
-      putStrLn $ show c ++ ": " ++ show str
-      next
-    SetScene (Scene n s) next -> do
-      putStrLn $ "Entering scene " ++ show n ++ "..."
-      printScript s
-      next
-    SetFlag f p next -> do
-      putStrLn $ "Setting flag " ++ f ++ " to " ++ show p ++ "."
-      next
-    IfFlag f s next -> do
-      putStrLn $ "If " ++ show f ++ " then do..."
-      printScript s
-      next
-    IfNoFlag f s next -> do
-      putStrLn $ "If no " ++ show f ++ " then run..."
-      printScript s
-      next
-    Done -> return ()

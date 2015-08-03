@@ -49,8 +49,9 @@ updateInput appRef backendRef = do
       pos1        = input^.inputMousePos1
       pos2        = input^.inputMousePos2
 
-  updateInputTable backendRef  keyTable
-  updateInputTable backendRef buttonTable
+  t <- B.elapsedTime backendRef
+  updateInputTable t keyTable
+  updateInputTable t buttonTable
 
   H.mapM_ (notifyKeyListeners listeners) keyTable
   H.mapM_ (notifyButtonListeners listeners pos1 pos2) buttonTable
@@ -82,29 +83,18 @@ notifyButtonListeners listeners
       mapM_ (\(MkInputListener a) -> mouseClickDragged a button dt pos') listeners
 
 -- | Upgrades Down to held, increments time on held, and does nothing when up.
-updateInputState :: (B.Backend a, Hashable k, Eq k)
-                 => IORef a -> (k, InputState) -> IO (k, InputState)
-updateInputState backendRef (k, state) =
+updateInputState :: Double-> (k, InputState) -> IO (k, InputState)
+updateInputState t (k, state) =
   case state of
-    Down -> do
-      t1 <- B.elapsedTime backendRef
-      return (k, Held t1 0)
-    Held t1 _ -> do
-      t2 <- B.elapsedTime backendRef
-      return (k, Held t1 (t2-t1))
-    Up -> return (k, state)
-
--- | Applies InputState update to an entire list
-updateInputStates :: (B.Backend a, Hashable k, Eq k)
-                  => IORef a -> [(k, InputState)] -> IO [(k, InputState)]
-updateInputStates backendRef =
-  mapM (updateInputState backendRef)
+    Down      -> return (k, Held t 0)
+    Held t1 _ -> return (k, Held t1 (t-t1))
+    Up        -> return (k, state)
 
 -- | Updates the states of an input table
-updateInputTable :: (B.Backend a, Hashable k, Eq k)
-                 => IORef a -> InputTable k -> IO ()
-updateInputTable ref table =
-  H.toList table >>= updateInputStates ref >>= mapM_ (uncurry (H.insert table))
+updateInputTable :: (Hashable k, Eq k)
+                 => Double -> InputTable k -> IO ()
+updateInputTable t table =
+  H.toList table >>= mapM_ (updateInputState t >=> uncurry (H.insert table))
 
 
 -- Input callbacks to communicate with backend --------------------------------

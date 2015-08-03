@@ -8,6 +8,7 @@ import Vish.Graphics.Texture
 import Vish.Graphics.Picture
 import Vish.Util
 import Data.Maybe
+import Data.List
 import System.Directory
 import System.FilePath
 import Text.Regex.TDFA
@@ -17,8 +18,8 @@ actorDirectory name =
   "data" </> "actor" </> name
 
 actorRegex :: Name -> Expression -> String
-actorRegex name expr =
-  actorDirectory name </> name ++ "-" ++ expr <.> "*"
+actorRegex _ expr =
+  expr <.> "*"
 
 bgDirectory :: FilePath
 bgDirectory =
@@ -26,7 +27,7 @@ bgDirectory =
 
 bgRegex :: Name -> String
 bgRegex name =
-  bgDirectory </> name <.> "*"
+  name <.> "*"
 
 findActorFile :: Actor -> IO FilePath
 findActorFile (name, expr) = do
@@ -34,7 +35,9 @@ findActorFile (name, expr) = do
   let matches = mapMaybe (=~~ actorRegex name expr) contents
   case matches of
     []  -> error $ "No image found for " ++ name ++ " with expression " ++ expr
-    [x] -> return x
+                    ++ "\nPath regex: " ++ actorRegex name expr
+                    ++ "\nFiles found: " ++ (intercalate ", ") contents
+    [x] -> return $ actorDirectory name </> x
     xs -> error $ "File conflicts for " ++ name ++ " with expression " ++ expr ++ ": " ++ show xs
 
 findBgFile :: Name -> IO FilePath
@@ -43,7 +46,7 @@ findBgFile name = do
   let matches = mapMaybe (=~~ bgRegex name) contents
   case matches of
     []  -> error $ "No image found for background " ++ name
-    [x] -> return x
+    [x] -> return $ bgDirectory </> x
     xs -> error $ "File conflicts for background " ++ name ++ ": " ++ show xs
 
 installActorTexture :: TexCache -> Actor -> IO ()
@@ -52,7 +55,7 @@ installActorTexture texCache actor = do
   path <- findActorFile actor
   installTexture texCache path tag
 
-installScriptActors :: TexCache -> Script -> IO ()
+installScriptActors :: TexCache -> [ScriptCommand] -> IO ()
 installScriptActors texCache =
   mapM_ (installActorTexture texCache) . getActors
 
@@ -61,12 +64,12 @@ installBgTexture texCache name = do
   path <- findBgFile name
   installTexture texCache path name
 
-installScriptBgs :: TexCache -> Script -> IO ()
+installScriptBgs :: TexCache -> [ScriptCommand] -> IO ()
 installScriptBgs texCache =
   mapM_ (installBgTexture texCache) . getBgs
 
-initScript :: TexCache -> Script -> IO ()
-initScript texCache script = do
+initScript :: TexCache -> [ScriptCommand] -> IO ()
+initScript texCache commands = do
   scrubTexCache texCache -- Needs to be clean for new script
-  installScriptBgs texCache script
-  installScriptActors texCache script
+  installScriptBgs texCache commands
+  installScriptActors texCache commands
