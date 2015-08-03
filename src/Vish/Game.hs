@@ -11,6 +11,7 @@ import Vish.Graphics.Data.Picture (Picture)
 import qualified Vish.Graphics.Data.Picture as Pic
 
 import Control.Lens
+import Vish.Application.Data.IORef.Lens
 import Control.Monad
 import Data.Monoid
 import Data.IORef
@@ -63,11 +64,11 @@ data GameInput = GameInput (AppRef GameWorld)
 
 instance InputListener GameInput where
   mouseClicked (GameInput appRef) _ _ =
-    modifyIORef appRef $ appWorld.gameWaiting .~ False
+    appRef & appWorld.gameWaiting @~ False
   keyReleased (GameInput appRef) Key'Enter =
-    modifyIORef appRef $ appWorld.gameWaiting .~ False
+    appRef & appWorld.gameWaiting @~ False
   keyReleased (GameInput appRef) Key'Space =
-      modifyIORef appRef $ appWorld.gameWaiting .~ False
+    appRef & appWorld.gameWaiting @~ False
   keyReleased _ _ = return ()
 
 

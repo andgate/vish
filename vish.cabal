@@ -88,6 +88,8 @@ library
                       Vish.Graphics.Data.Texture
                       Vish.Graphics.Util
 
+                      Vish.Application.Data.IORef.Lens
+
   Other-modules:      Vish.Application.Backend
                       Vish.Application.Backend.Types
                       Vish.Application.Data.InputPrims
