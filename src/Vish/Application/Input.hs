@@ -1,5 +1,9 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Vish.Application.Input where
+module Vish.Application.Input
+  ( module Vish.Application.Input
+  , module Vish.Application.Data.Input
+  )
+where
 
 import Vish.Application.Data.App
 import Vish.Application.Data.Input

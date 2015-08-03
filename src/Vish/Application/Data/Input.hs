@@ -1,8 +1,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Vish.Application.Data.Input
-  ( module Vish.Application.Data.InputPrims
-  , module Vish.Application.Data.Input
+  ( module Vish.Application.Data.Input
+  , module Vish.Application.Data.InputPrims
   )
 where
 

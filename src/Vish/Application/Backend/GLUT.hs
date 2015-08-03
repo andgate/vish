@@ -38,7 +38,11 @@ instance Backend GLUTState where
   initializeBackend = initGLUT
 
   -- non-freeglut doesn't like this: (\_ -> GLUT.leaveMainLoop)
-  exitBackend _ = System.exitWith System.ExitSuccess
+  --exitBackend _ = System.exitWith System.ExitSuccess
+  exitBackend _ = do
+    GLUT.leaveGameMode
+    maybeWin <- get GLUT.currentWindow
+    forM_ maybeWin GLUT.destroyWindow
 
   openWindow = openWindowGLUT
   dumpBackendState = dumpStateGLUT

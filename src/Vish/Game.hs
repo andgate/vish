@@ -2,8 +2,10 @@ module Vish.Game where
 
 import Vish.Script
 import Vish.Interpreter
+
 import Vish.Application.App
 import Vish.Application.Data.App
+import Vish.Application.Input
 
 import Vish.Graphics.Data.Picture (Picture)
 import qualified Vish.Graphics.Data.Picture as Pic
@@ -18,6 +20,7 @@ data GameWorld = GameWorld
   { _gameCommands :: Z.Zipper ScriptCommand
   , _gameBackgroundPic :: Picture
   , _gameStagePic :: Picture
+  , _gameWaiting :: Bool
   }
 
 mkGameWorld :: Script -> GameWorld
@@ -28,13 +31,18 @@ mkGameWorld script =
   { _gameCommands = script'
   , _gameBackgroundPic = Pic.blank
   , _gameStagePic = Pic.blank
+  , _gameWaiting = False
   }
 
 makeLenses ''GameWorld
 
 instance AppListener GameWorld where
   appCreate = loadScript
-  appUpdate = scriptUpdate
+
+  appUpdate appRef = do
+    isWaiting <- liftM (^.appWorld.gameWaiting) (readIORef appRef)
+    unless isWaiting $ scriptUpdate appRef
+    registerInputListener appRef $ GameInput appRef
 
   appDraw app = do
     world <- liftM (^.appWorld) (getApp app)
@@ -50,6 +58,18 @@ instance AppListener GameWorld where
 
   appResume _ =
     print "Application resumed."
+
+data GameInput = GameInput (AppRef GameWorld)
+
+instance InputListener GameInput where
+  mouseClicked (GameInput appRef) _ _ =
+    modifyIORef appRef $ appWorld.gameWaiting .~ False
+  keyReleased (GameInput appRef) Key'Enter =
+    modifyIORef appRef $ appWorld.gameWaiting .~ False
+  keyReleased (GameInput appRef) Key'Space =
+      modifyIORef appRef $ appWorld.gameWaiting .~ False
+  keyReleased _ _ = return ()
+
 
 runScript :: Script -> IO ()
 runScript = play . mkGameWorld
@@ -74,6 +94,7 @@ commandUpdate appRef command =
     Done -> quitApp appRef
     SetBackground name _ -> gameSetBackground appRef name
     Pause t _ -> appDelay t
+    Speak c m _ -> gameCharacterSpeak appRef c m
     _ -> print command
 
 loadScript :: AppRef GameWorld -> IO ()
@@ -85,3 +106,9 @@ loadScript appRef = do
 gameSetBackground :: AppRef GameWorld -> Name -> IO ()
 gameSetBackground appRef name =
   modifyIORef appRef $ appWorld.gameBackgroundPic .~ Pic.image name
+
+
+gameCharacterSpeak :: AppRef GameWorld -> Name -> String -> IO ()
+gameCharacterSpeak appRef name msg = do
+  modifyIORef appRef $ appWorld.gameWaiting .~ True
+  print $ name ++ ": " ++ msg
