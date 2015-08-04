@@ -45,10 +45,9 @@ instance AppListener GameWorld where
     unless isWaiting $ scriptUpdate appRef
     registerInputListener appRef $ GameInput appRef
 
-  appDraw app = do
-    world <- liftM (^.appWorld) (getApp app)
-    let background = world^.gameBackgroundPic
-        stage = world^.gameStagePic
+  appDraw appRef = do
+    background <- appRef ^@ appWorld.gameBackgroundPic
+    stage      <- appRef ^@ appWorld.gameStagePic
     return $ stage <> background
 
   appDispose _ =
@@ -99,8 +98,8 @@ commandUpdate appRef command =
 
 loadScript :: AppRef GameWorld -> IO ()
 loadScript appRef = do
-  texCache <- liftM (^.appGfx.gfxTexCache) (getApp appRef)
-  commands <- liftM (^.appWorld.gameCommands) (getApp appRef)
+  texCache <- appRef ^@ appGfx.gfxTexCache
+  commands <- appRef ^@ appWorld.gameCommands
   initScript texCache $ Z.toList commands
 
 gameSetBackground :: AppRef GameWorld -> Name -> IO ()
