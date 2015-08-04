@@ -26,13 +26,15 @@ import qualified System.Mem  as System
 --   so this data type is empty.
 data GLUTState =
   GLUTState
-  { _glutisPlaying :: Bool
+  { _glutAppStatus :: GLUTAppStatus
   }
+
+data GLUTAppStatus = GLUTPlay | GLUTPause | GLUTExit
 
 makeLenses ''GLUTState
 
 initGLUTState :: GLUTState
-initGLUTState  = GLUTState True
+initGLUTState  = GLUTState GLUTPlay
 
 instance Backend GLUTState where
   initBackendState  = initGLUTState
@@ -40,10 +42,7 @@ instance Backend GLUTState where
 
   -- non-freeglut doesn't like this: (\_ -> GLUT.leaveMainLoop)
   --exitBackend _ = System.exitWith System.ExitSuccess
-  exitBackend _ = do
-    GLUT.leaveGameMode
-    maybeWin <- get GLUT.currentWindow
-    forM_ maybeWin GLUT.destroyWindow
+  exitBackend = glutAppStatus @~ GLUTExit
 
   openWindow = openWindowGLUT
   dumpBackendState = dumpStateGLUT
@@ -160,25 +159,31 @@ installDisplayCallbackGLUT ref callbacks =
 
 callbackDisplay :: IORef GLUTState -> Callbacks -> IO ()
 callbackDisplay ref callbacks = do
-  isPlaying <- ref^@glutisPlaying
-  when isPlaying $ do
-    GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-    GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
-    GL.blend $= GL.Enabled
-    GL.blendFunc $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
+  appStatus <- ref ^@ glutAppStatus
+  case appStatus of
+    GLUTPause -> return ()
+    GLUTExit  -> do
+      GLUT.leaveGameMode
+      maybeWin <- get GLUT.currentWindow
+      forM_ maybeWin GLUT.destroyWindow
+    GLUTPlay  -> do
+      GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+      GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
+      GL.blend $= GL.Enabled
+      GL.blendFunc $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
 
-    -- get the display callbacks from the chain
-    displayCallback callbacks ref
+      -- get the display callbacks from the chain
+      displayCallback callbacks ref
 
-    -- swap front and back buffers
-    GLUT.swapBuffers
-    -- run gc to reduce pauses during mainloop (hopefully)
-    System.performGC
+      -- swap front and back buffers
+      GLUT.swapBuffers
+      -- run gc to reduce pauses during mainloop (hopefully)
+      System.performGC
 
-    -- Don't report errors by default.
-    -- The windows OpenGL implementation seems to complain for no reason.
-    --  GLUT.reportErrors
-    GLUT.postRedisplay Nothing
+      -- Don't report errors by default.
+      -- The windows OpenGL implementation seems to complain for no reason.
+      --  GLUT.reportErrors
+      GLUT.postRedisplay Nothing
 
 -- App Status Callback -----------------------------------------------------
 -- | Callback for when the app is paused/resumed.
@@ -190,10 +195,10 @@ callbackVisibility :: IORef GLUTState -> Callbacks -> GLUT.Crossing -> IO ()
 callbackVisibility ref callbacks vis =
   case vis of
     GLUT.WindowEntered -> do
-      ref & glutisPlaying @~ True
+      ref & glutAppStatus @~ GLUTPlay
       resumeCallback callbacks ref
     GLUT.WindowLeft -> do
-      ref & glutisPlaying @~ False
+      ref & glutAppStatus @~ GLUTPause
       pauseCallback callbacks ref
 
 
@@ -205,9 +210,8 @@ installWindowCloseCallbackGLUT ref callbacks =
   GLUT.closeCallback $= (Just $ closeCallback callbacks ref)
 
 callbackWindowClose :: IORef GLUTState -> Callbacks -> IO ()
-callbackWindowClose ref callbacks = do
+callbackWindowClose ref callbacks =
   closeCallback callbacks ref
-  exitBackend ref
 
 
 -- Reshape Callback -----------------------------------------------------------
