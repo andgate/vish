@@ -13,6 +13,7 @@ import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.IORef
+import Vish.Application.Data.IORef.Lens
 import           Data.Yaml
 import           Data.Maybe (fromMaybe)
 
@@ -48,7 +49,7 @@ playWithBackend backend world = do
 
 quitApp :: AppRef a -> IO ()
 quitApp appRef =
-  modifyIORef appRef $ appStatus .~ AppQuit
+  appRef & appStatus @~ AppQuit
 
 appDelay :: Double -> IO ()
 appDelay s = threadDelay ms
@@ -60,8 +61,7 @@ displayUpdate appRef backendRef = do
   appUpdate appRef
   pic <- appDraw appRef
 
-  app <- readIORef appRef
-  let texCache = app^.appGfx.gfxTexCache
+  texCache <- appRef ^@ appGfx.gfxTexCache
   displayPicture texCache pic
 
   appPostUpdate appRef
@@ -70,7 +70,7 @@ displayUpdate appRef backendRef = do
 
 handleAppStatus :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 handleAppStatus appRef backendRef = do
-  shouldQuit <- liftM (^.appStatus) (readIORef appRef)
+  shouldQuit <- appRef^@appStatus
   case shouldQuit of
     AppPlay -> return ()
     AppQuit -> exitBackend backendRef
@@ -103,4 +103,4 @@ instance InputListener InputPrinter where
 registerInputListener :: InputListener l => AppRef w -> l -> IO ()
 registerInputListener appRef listener = do
   let reg = register listener
-  modifyIORef appRef $ appInput.inputListeners %~ (reg:)
+  appRef & appInput.inputListeners @%~ (reg:)

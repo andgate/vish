@@ -13,6 +13,7 @@ import Control.Arrow
 import Control.Lens
 import Control.Monad
 import Data.IORef
+import Vish.Application.Data.IORef.Lens
 import Data.Hashable
 import qualified Data.HashTable.IO as H
 
@@ -36,17 +37,17 @@ cacheInput table key state = do
       return $ Just state'
 
 cleanInputCache :: AppRef w -> IO ()
-cleanInputCache ref = do
+cleanInputCache appRef = do
   keyTable <- H.new
   buttonTable <- H.new
-  modifyIORef ref $ appInput.inputKeyTable .~ keyTable
-  modifyIORef ref $ appInput.inputButtonTable .~ buttonTable
+  appRef & appInput.inputKeyTable @~ keyTable
+  appRef & appInput.inputButtonTable @~ buttonTable
 
 -- Input update --------------------------------------------------------------
 -- | Updates the input in the tables
 updateInput :: B.Backend a => AppRef w -> IORef a -> IO ()
 updateInput appRef backendRef = do
-  input <- liftM (^.appInput) (readIORef appRef)
+  input <- appRef ^@ appInput
   let keyTable    = input^.inputKeyTable
       buttonTable = input^.inputButtonTable
       listeners   = input^.inputListeners
@@ -60,7 +61,7 @@ updateInput appRef backendRef = do
   H.mapM_ (notifyKeyListeners listeners) keyTable
   H.mapM_ (notifyButtonListeners listeners pos1 pos2) buttonTable
 
-  modifyIORef appRef $ appInput.inputMousePos1 .~ pos2
+  appRef & appInput.inputMousePos1 @~ pos2
 
 notifyKeyListeners :: [Registrable] -> (Key, InputState) -> IO ()
 notifyKeyListeners listeners (key, state) =
@@ -104,7 +105,7 @@ updateInputTable t table =
 -- Input callbacks to communicate with backend --------------------------------
 updateKeyboardInput :: B.Backend a => AppRef w -> IORef a -> Key -> B.InputState -> IO ()
 updateKeyboardInput appRef backendRef key state = do
-  input <- liftM (^.appInput) (readIORef appRef)
+  input <- appRef ^@ appInput
   let listeners = input^.inputListeners
   maybeState' <- cacheInput (input^.inputKeyTable) key state
   case maybeState' of
@@ -114,14 +115,14 @@ updateKeyboardInput appRef backendRef key state = do
 updateMouseMoveInput :: B.Backend a => AppRef w -> IORef a
                         -> Double -> Double -> IO ()
 updateMouseMoveInput appRef _ posX2 posY2 = do
-  input <- liftM (^.appInput) (readIORef appRef)
+  input <- appRef ^@ appInput
   let listeners = input^.inputListeners
       pos1@(posX1, posY1) = input^.inputMousePos2
       pos2 = (posX2, posY2)
       pos' = (posX2 - posX1, posY2 - posY1)
 
-  modifyIORef appRef $ appInput.inputMousePos1 .~ pos1
-  modifyIORef appRef $ appInput.inputMousePos2 .~ pos2
+  appRef & appInput.inputMousePos1 @~ pos1
+  appRef & appInput.inputMousePos2 @~ pos2
 
   mapM_ (\(MkInputListener a) -> mousePositioned a pos2) listeners
   mapM_ (\(MkInputListener a) -> mouseMoved a pos') listeners
@@ -130,13 +131,13 @@ updateMouseClickInput :: B.Backend a => AppRef w -> IORef a
                         -> MouseButton -> B.InputState
                         -> Double -> Double -> IO ()
 updateMouseClickInput appRef backendRef button state posX2 posY2 = do
-  input <- liftM (^.appInput) (readIORef appRef)
+  input <- appRef ^@ appInput
   let listeners = input^.inputListeners
       pos1 = input^.inputMousePos2
       pos2 = (posX2, posY2)
 
-  modifyIORef appRef $ appInput.inputMousePos1 .~ pos1
-  modifyIORef appRef $ appInput.inputMousePos2 .~ pos2
+  appRef & appInput.inputMousePos1 @~ pos1
+  appRef & appInput.inputMousePos2 @~ pos2
 
   maybeState' <- cacheInput (input^.inputButtonTable) button state
   case maybeState' of
@@ -147,5 +148,5 @@ updateScrolledInput :: B.Backend a => AppRef w -> IORef a
                         -> Double -> Double -> IO ()
 updateScrolledInput appRef _ scrollX scrollY = do
   -- would be nice if this could be velocity
-  listeners <- liftM (^.appInput.inputListeners) (readIORef appRef)
+  listeners <- appRef ^@ appInput.inputListeners
   mapM_ (\(MkInputListener a) -> scrolled a scrollX scrollY) listeners

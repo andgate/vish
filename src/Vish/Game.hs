@@ -41,7 +41,7 @@ instance AppListener GameWorld where
   appCreate = loadScript
 
   appUpdate appRef = do
-    isWaiting <- liftM (^.appWorld.gameWaiting) (readIORef appRef)
+    isWaiting <- appRef ^@ appWorld.gameWaiting
     unless isWaiting $ scriptUpdate appRef
     registerInputListener appRef $ GameInput appRef
 
@@ -77,13 +77,12 @@ runScript = play . mkGameWorld
 
 scriptUpdate :: AppRef GameWorld -> IO ()
 scriptUpdate appRef = do
-  world <- liftM (^.appWorld) (readIORef appRef)
-  let commands = world ^. gameCommands
-      commands' = Z.right commands
+  commands <- appRef ^@ appWorld.gameCommands
+  let commands' = Z.right commands
       maybeCommand = Z.safeCursor commands
 
   -- Save the freshly moved zipper
-  modifyIORef appRef $ appWorld.gameCommands .~ commands'
+  appRef & appWorld.gameCommands @~ commands'
 
   case maybeCommand of
     Nothing -> quitApp appRef
@@ -106,10 +105,10 @@ loadScript appRef = do
 
 gameSetBackground :: AppRef GameWorld -> Name -> IO ()
 gameSetBackground appRef name =
-  modifyIORef appRef $ appWorld.gameBackgroundPic .~ Pic.image name
+  appRef & appWorld.gameBackgroundPic @~ Pic.image name
 
 
 gameCharacterSpeak :: AppRef GameWorld -> Name -> String -> IO ()
 gameCharacterSpeak appRef name msg = do
-  modifyIORef appRef $ appWorld.gameWaiting .~ True
+  appRef & appWorld.gameWaiting @~ True
   print $ name ++ ": " ++ msg

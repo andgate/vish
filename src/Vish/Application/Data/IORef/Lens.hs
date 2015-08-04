@@ -6,6 +6,7 @@ import Control.Monad
 import Data.IORef
 
 infixr 4 @~
+infixr 4 @%~
 infixl 8 ^@
 
 
@@ -14,7 +15,12 @@ infixl 8 ^@
   liftM (^.l) (readIORef r)
 {-# INLINE (^@) #-}
 
-(@~) :: Setter s s a b -> b -> IORef s -> IO ()
-(@~) l v r =
-  modifyIORef r $ l .~ v
+(@~) :: Setter s s a a -> a -> IORef s -> IO ()
+(@~) l x r =
+  modifyIORef r $ l .~ x
 {-# INLINE (@~) #-}
+
+(@%~) :: Setter s s a a -> (a -> a) -> IORef s -> IO ()
+(@%~) l f r =
+  modifyIORef r $ l %~ f
+{-# INLINE (@%~) #-}

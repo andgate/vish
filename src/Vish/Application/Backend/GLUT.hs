@@ -12,6 +12,7 @@ import Control.Lens
 import Control.Monad
 
 import Data.IORef
+import Vish.Application.Data.IORef.Lens
 
 import Graphics.UI.GLUT                    (get,($=))
 import qualified Graphics.UI.GLUT          as GLUT
@@ -159,7 +160,7 @@ installDisplayCallbackGLUT ref callbacks =
 
 callbackDisplay :: IORef GLUTState -> Callbacks -> IO ()
 callbackDisplay ref callbacks = do
-  isPlaying <- liftM (^.glutisPlaying) (readIORef ref)
+  isPlaying <- ref^@glutisPlaying
   when isPlaying $ do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
     GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
@@ -189,10 +190,10 @@ callbackVisibility :: IORef GLUTState -> Callbacks -> GLUT.Crossing -> IO ()
 callbackVisibility ref callbacks vis =
   case vis of
     GLUT.WindowEntered -> do
-      modifyIORef ref $ glutisPlaying .~ True
+      ref & glutisPlaying @~ True
       resumeCallback callbacks ref
     GLUT.WindowLeft -> do
-      modifyIORef ref $ glutisPlaying .~ False
+      ref & glutisPlaying @~ False
       pauseCallback callbacks ref
 
 

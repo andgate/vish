@@ -15,6 +15,7 @@ import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.IORef
+import Vish.Application.Data.IORef.Lens
 import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes, fromMaybe)
@@ -46,7 +47,7 @@ glfwStateInit =
 
 whenWindow :: IORef GLFWState -> (GLFW.Window -> IO a) -> IO (Maybe a)
 whenWindow ref f = do
-  maybeWindow <- liftM (^. glfwWindow) (readIORef ref)
+  maybeWindow <- ref ^@ glfwWindow
   forM maybeWindow f
 
 whenWindow_ :: IORef GLFWState -> (GLFW.Window -> IO a) -> IO ()
@@ -93,9 +94,8 @@ initializeGLFW _ debug = do
 -- | Tell the GLFW backend to close the window and exit.
 exitGLFW :: IORef GLFWState -> IO ()
 exitGLFW ref = do
-  glfwState <- readIORef ref
-  maybe (return ()) GLFW.destroyWindow (glfwState ^. glfwWindow)
-  GLFW.terminate
+  glfwWin <- ref ^@ glfwWindow
+  mapM_ (`GLFW.setWindowShouldClose` True) glfwWin
 
 
 -- Open Window ----------------------------------------------------------------
@@ -109,7 +109,7 @@ openWindowGLFW ref win = do
   glfwWin <- GLFW.createWindow (win^.winW) (win^.winH) (win^.winName)
                 maybeMonitor Nothing
 
-  modifyIORef ref $ glfwWindow .~ glfwWin
+  ref & glfwWindow @~ glfwWin
 
   -- Try to enable sync-to-vertical-refresh by setting the number
   -- of buffer swaps per vertical refresh to 1.
@@ -121,7 +121,7 @@ openWindowGLFW ref win = do
 --   TODO: Implement a standard state dump across all backends.
 dumpStateGLFW :: IORef GLFWState -> IO ()
 dumpStateGLFW ref = do
-  maybeWin <- return . (^.glfwWindow) =<< readIORef ref
+  maybeWin <- ref ^@ glfwWindow
   case maybeWin of
     Nothing      -> return ()
     Just glfwWin -> do
@@ -241,7 +241,7 @@ getJoystickNames =
 -- | Callback for when GLFW needs us to redraw the contents of the window.
 installDisplayCallbackGLFW :: IORef GLFWState -> Callbacks -> IO ()
 installDisplayCallbackGLFW ref callbacks =
-  modifyIORef ref $ display .~ callbackDisplay ref callbacks
+  ref & display @~ callbackDisplay ref callbacks
 
 
 callbackDisplay :: IORef GLFWState -> Callbacks -> IO ()
@@ -281,7 +281,6 @@ installWindowCloseCallbackGLFW ref callbacks =
 callbackWindowClose :: IORef GLFWState -> Callbacks -> GLFW.Window -> IO ()
 callbackWindowClose ref callbacks _ = do
   closeCallback callbacks ref
-  exitBackend ref
 
 -- Reshape --------------------------------------------------------------------
 -- | Callback for when the user reshapes the window.
@@ -364,15 +363,16 @@ runMainLoopGLFW ref =
     winShouldClose <- GLFW.windowShouldClose glfwWin
     winFocus <- GLFW.getWindowFocused glfwWin
     if winShouldClose
-      then
-        exitBackend ref
+      then do
+        GLFW.destroyWindow glfwWin
+        GLFW.terminate
       else do
         case winFocus of
           GLFW.FocusState'Defocused -> GLFW.waitEvents
           GLFW.FocusState'Focused -> do
             GLFW.pollEvents
 
-            (^.display) =<< readIORef ref
+            join $ ref ^@ display
             GLFW.swapBuffers glfwWin
             -- run gc to reduce pauses during mainloop (hopefully)
             System.performGC
