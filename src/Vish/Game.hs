@@ -9,6 +9,8 @@ import Vish.Application.Input
 
 import Vish.Graphics.Data.Picture (Picture)
 import qualified Vish.Graphics.Data.Picture as Pic
+import Vish.Graphics.Data.Texture
+import Vish.Graphics.Texture
 
 import Control.Lens
 import Vish.Application.Data.IORef.Lens
@@ -48,7 +50,7 @@ instance AppListener GameWorld where
   appDraw appRef = do
     background <- appRef ^@ appWorld.gameBackgroundPic
     stage      <- appRef ^@ appWorld.gameStagePic
-    return $ stage <> background
+    return $ background <> stage
 
   appDispose _ =
     print "Disposing app"
@@ -96,8 +98,10 @@ commandUpdate appRef command =
   case command of
     Done -> quitApp appRef
     SetBackground name _ -> gameSetBackground appRef name
-    Pause t _ -> appDelay t
-    Speak c m _ -> gameCharacterSpeak appRef c m
+    Pause t _ -> --appDelay t
+      return ()
+    Speak a m _ -> gameActorSpeak appRef a m
+    ShowActor c _ -> gameShowActor appRef c
     _ -> print command
 
 loadScript :: AppRef GameWorld -> IO ()
@@ -111,7 +115,14 @@ gameSetBackground appRef name =
   appRef & appWorld.gameBackgroundPic @~ Pic.image name
 
 
-gameCharacterSpeak :: AppRef GameWorld -> Name -> String -> IO ()
-gameCharacterSpeak appRef name msg = do
+gameShowActor :: AppRef GameWorld -> Actor -> IO ()
+gameShowActor appRef actor = do
+  let actorPic = Pic.image . actorTag $ actor
+  appRef & appWorld.gameStagePic @~ actorPic
+  return ()
+
+gameActorSpeak :: AppRef GameWorld -> Name -> String -> IO ()
+gameActorSpeak appRef name msg = do
   appRef & appWorld.gameWaiting @~ True
+  --appRef & appWorld.gameStagePic @~ actorPic
   print $ name ++ ": " ++ msg

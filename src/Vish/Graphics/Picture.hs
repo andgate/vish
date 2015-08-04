@@ -5,11 +5,13 @@ import Vish.Graphics.Texture
 import Vish.Graphics.Data.Texture
 import Vish.Graphics.Util
 
+import qualified Data.HashTable.IO as H
+
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
-displayPicture :: TexCache -> Picture -> IO ()
-displayPicture texCache pic =
-  withModelview (640, 480) $ drawPicture texCache pic
+displayPicture :: TexCache -> Picture -> (Int, Int) -> IO ()
+displayPicture texCache pic (w, h) =
+  withModelview (w, h) $ drawPicture texCache pic
 
 drawPicture :: TexCache -> Picture -> IO ()
 drawPicture texCache picture =
@@ -17,10 +19,10 @@ drawPicture texCache picture =
     Blank ->
       return ()
 
-    Image path next -> do
-      eitherTex <- fetchTexture texCache path
+    Image name next -> do
+      eitherTex <- fetchTexture texCache name
       case eitherTex of
-        Left _ -> return ()
+        Left e -> print e
         Right tex -> drawTexture tex
       drawPicture texCache next
 

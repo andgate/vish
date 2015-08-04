@@ -10,6 +10,7 @@ import qualified Vish.Application.Data.Input as I
 import Control.Concurrent
 import Control.Lens
 import Control.Monad
+import Data.Bifunctor
 
 import Data.IORef
 import Vish.Application.Data.IORef.Lens
@@ -64,7 +65,7 @@ instance Backend GLUTState where
 
   getWindowDimensions _ = do
     GL.Size sizeX sizeY <- get GLUT.windowSize
-    return . Just $ (fromEnum sizeX, fromEnum sizeY)
+    return . Just $  (fromEnum sizeX, fromEnum sizeY)
 
   elapsedTime _ =
     liftM ((/ 1000) . fromIntegral) $ get GLUT.elapsedTime
@@ -80,7 +81,7 @@ initGLUT _ debug = do
   glutVersion         <- get GLUT.glutVersion
   when debug . putStrLn $ "  glutVersion       = " ++ show glutVersion
 
-  GLUT.initialDisplayMode $= [ GLUT.RGBMode, GLUT.DoubleBuffered]
+  GLUT.initialDisplayMode $= [ GLUT.RGBAMode, GLUT.DoubleBuffered]
 
   -- See if our requested display mode is possible
   displayMode         <- get GLUT.initialDisplayMode
@@ -92,22 +93,20 @@ initGLUT _ debug = do
 -- Open Window ----------------------------------------------------------------
 openWindowGLUT :: IORef GLUTState -> Window -> IO ()
 openWindowGLUT _ win = do
-  GLUT.initialWindowSize
-    $= GL.Size (fromIntegral $ win^.windowWidth) (fromIntegral $ win^.windowHeight)
-
-  GLUT.initialWindowPosition
-    $= GL.Position (fromIntegral $ win^.windowX) (fromIntegral $ win^.windowY)
+  let (x, y) = bimap fromIntegral fromIntegral $ win^.windowPosition
+      (w, h) = bimap fromIntegral fromIntegral $ win^.windowSize
+  GLUT.initialWindowSize $= GL.Size w h
+  GLUT.initialWindowPosition $= GL.Position x y
 
   GLUT.createWindow $ win^.windowName
 
-  GLUT.windowSize
-    $= GL.Size (fromIntegral $ win^.windowWidth) (fromIntegral $ win^.windowHeight)
+  GLUT.windowSize $= GL.Size w h
 
   case win^.windowState of
     WindowFullscreen -> do
       GLUT.gameModeCapabilities $=
-           [ GLUT.Where' GLUT.GameModeWidth GLUT.IsEqualTo $ win^.windowWidth
-           , GLUT.Where' GLUT.GameModeHeight GLUT.IsEqualTo $ win^.windowHeight ]
+           [ GLUT.Where' GLUT.GameModeWidth GLUT.IsEqualTo $ fromIntegral w
+           , GLUT.Where' GLUT.GameModeHeight GLUT.IsEqualTo $ fromIntegral h ]
       void GLUT.enterGameMode
     WindowFloating -> return ()
 
@@ -167,11 +166,6 @@ callbackDisplay ref callbacks = do
       maybeWin <- get GLUT.currentWindow
       forM_ maybeWin GLUT.destroyWindow
     GLUTPlay  -> do
-      GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-      GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
-      GL.blend $= GL.Enabled
-      GL.blendFunc $= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
-
       -- get the display callbacks from the chain
       displayCallback callbacks ref
 

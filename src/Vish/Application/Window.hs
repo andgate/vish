@@ -1,41 +1,48 @@
-module Vish.Application.Window where
+module Vish.Application.Window
+  ( module Vish.Application.Window
+  , module Vish.Application.Data.Window
+  )
+where
 
+import Vish.Application.Data.App
 import Vish.Application.Data.Window
 import Vish.Application.Backend.Types
+import Vish.Application.Graphics
 
 import Control.Monad
 import Data.IORef
+import Vish.Application.Data.IORef.Lens
 
 import Graphics.Rendering.OpenGL                        (($=))
 import qualified Graphics.Rendering.OpenGL.GL           as GL
 
-createWindow :: Backend b => b -> Window -> Callbacks -> IO ()
-createWindow backend window callbacks = do
-  let debug = False
+createWindow :: (Backend b, AppListener w) => AppRef w -> b -> Callbacks -> IO ()
+createWindow appRef backendRef callbacks = do
+  let debug = True
 
-  ref <- newIORef backend
+  backendRef <- newIORef backendRef
   when debug . putStrLn $ "* displayInWindow"
 
-  initializeBackend ref debug
+  initializeBackend backendRef debug
   when debug . putStrLn $ "* c window\n"
 
-  openWindow ref window
-  dumpBackendState ref
+  openWindow backendRef =<< appRef ^@ appWindow
+  dumpBackendState backendRef
 
-  installCallbacks ref callbacks
-
-  GL.depthFunc $= Just GL.Always
-  --GL.clearColor   $= glColor4OfColor clearColor
+  installCallbacks backendRef callbacks
 
   -- Dump some debugging info
   when debug $ do
-    dumpBackendState ref
+    dumpBackendState backendRef
     -- Not implemented
     --dumpFramebufferState
     --dumpFragmentState
 
   when debug . putStrLn $ "* entering mainloop.."
 
-  runMainLoop ref
+  initGraphics
+  
+  appCreate appRef
+  runMainLoop backendRef
 
   when debug . putStrLn $ "* all done"

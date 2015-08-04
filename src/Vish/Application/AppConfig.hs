@@ -30,9 +30,7 @@ appConfigToWindow appConfig =
           else WindowFloating
   in Window
   { _windowName = name
-  , _windowX = 0
-  , _windowY = 0
-  , _windowWidth = width
-  , _windowHeight = height
+  , _windowPosition = (0, 0)
+  , _windowSize = (width, height)
   , _windowState = isFullscreen
   }

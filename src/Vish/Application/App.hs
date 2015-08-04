@@ -4,17 +4,18 @@ import           Vish.Application.Data.App
 import           Vish.Application.Data.Input
 import           Vish.Application.Data.Window
 import           Vish.Application.Backend
-import Vish.Application.AppConfig
+import           Vish.Application.AppConfig
 import           Vish.Application.Input
 import           Vish.Application.Window
 import           Vish.Graphics.Picture
+import           Vish.Application.Graphics
 
 
 import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.IORef
-import Vish.Application.Data.IORef.Lens
+import           Vish.Application.Data.IORef.Lens
 import           Data.Yaml
 import           Data.Maybe (fromMaybe)
 
@@ -27,16 +28,17 @@ play = playWithBackend defaultBackendState
 playWithBackend :: (Backend b, AppListener w) => b -> w -> IO ()
 playWithBackend backend world = do
   appRef <- newIORef =<< mkApp world
-  appCreate appRef
 
   appConfig <- loadAppConfig
-  let window = appConfigToWindow appConfig
+
+  let win = appConfigToWindow appConfig
+  appRef & appWindow @~ win
 
   let callbacks =
         Callbacks
         { displayCallback     = displayUpdate appRef
-        , pauseCallback    = pauseApplication appRef
-        , resumeCallback   = resumeApplication appRef
+        , pauseCallback       = pauseApplication appRef
+        , resumeCallback      = resumeApplication appRef
         , closeCallback       = disposeApplication appRef
         , reshapeCallback     = resizeWindow appRef
         , keyboardCallback    = updateKeyboardInput appRef
@@ -47,7 +49,7 @@ playWithBackend backend world = do
 
   registerInputListener appRef InputPrinter
 
-  createWindow backend window callbacks
+  createWindow appRef backend callbacks
 
 quitApp :: AppRef a -> IO ()
 quitApp appRef =
@@ -61,10 +63,14 @@ displayUpdate :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 displayUpdate appRef backendRef = do
   updateInput appRef backendRef
   appUpdate appRef
-  pic <- appDraw appRef
 
+  pic <- appDraw appRef
   texCache <- appRef ^@ appGfx.gfxTexCache
-  displayPicture texCache pic
+  winSize <- appRef ^@ appWindow.windowSize
+
+  renderStart
+  displayPicture texCache pic winSize
+  renderEnd
 
   appPostUpdate appRef
 

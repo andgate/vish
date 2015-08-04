@@ -7,6 +7,7 @@ where
 import Vish.Application.Backend.Types
 import Vish.Application.Data.Input (Key (..), MouseButton (..))
 import qualified Vish.Application.Data.Input as I
+import Vish.Application.Data.Window
 
 import Control.Concurrent
 import Control.Lens
@@ -102,11 +103,12 @@ exitGLFW ref = do
 -- | Open a new window.
 openWindowGLFW :: IORef GLFWState -> Window -> IO ()
 openWindowGLFW ref win = do
+  let (sizeX, sizeY) = win^.windowSize
   maybeMonitor <-
     case win^.windowState of
       WindowFullscreen -> GLFW.getPrimaryMonitor
       WindowFloating   -> return Nothing
-  glfwWin <- GLFW.createWindow (win^.windowWidth) (win^.windowHeight) (win^.windowName)
+  glfwWin <- GLFW.createWindow sizeX sizeY (win^.windowName)
                 maybeMonitor Nothing
 
   ref & glfwWindow @~ glfwWin

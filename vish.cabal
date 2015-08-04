@@ -52,6 +52,7 @@ library
                       , yaml >= 0.8 && < 1
                       , unordered-containers >= 0.2 && < 0.3
                       , ListZipper == 1.2.0.2
+                      , bifunctors == 5
 
   default-extensions: OverloadedStrings
                       , UnicodeSyntax

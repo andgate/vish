@@ -5,6 +5,7 @@ import Control.Lens
 import Data.IORef
 
 import Vish.Application.Data.Input (Input, mkInput)
+import Vish.Application.Data.Window
 
 import Vish.Graphics.Data.Picture
 import Vish.Graphics.Data.Texture
@@ -43,6 +44,7 @@ class AppListener w where
 data App w = App
   { _appGfx :: Gfx
   , _appInput :: Input
+  , _appWindow :: Window
   , _appWorld :: w
   , _appStatus :: AppStatus
   }
@@ -60,8 +62,10 @@ mkApp :: AppListener w => w -> IO (App w)
 mkApp world = do
   gfx       <- mkGfx
   input     <- mkInput
-  let status = AppPlay
-  return $ App gfx input world status
+  let win = windowDefault
+      status = AppPlay
+
+  return $ App gfx input win world status
 
 mkGfx :: IO Gfx
 mkGfx = do

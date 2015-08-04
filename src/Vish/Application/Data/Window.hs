@@ -6,23 +6,19 @@ data WindowState = WindowFloating | WindowFullscreen
   deriving (Show)
 
 data Window = Window
-  { _windowName :: String,
-    _windowX :: Int,
-    _windowY :: Int,
-    _windowWidth :: Int,
-    _windowHeight :: Int,
-    _windowState :: WindowState
+  { _windowName :: String
+  , _windowPosition :: (Int, Int)
+  , _windowSize :: (Int, Int)
+  , _windowState :: WindowState
   }
 
 windowDefault :: Window
 windowDefault =
   Window
-  { _windowName = "default",
-    _windowX = 0,
-    _windowY = 0,
-    _windowWidth = 640,
-    _windowHeight = 480,
-    _windowState = WindowFloating
+  { _windowName = "default"
+  , _windowPosition = (0, 0)
+  , _windowSize = (640, 480)
+  , _windowState = WindowFloating
   }
 
 makeLenses ''Window
