@@ -103,10 +103,10 @@ exitGLFW ref = do
 openWindowGLFW :: IORef GLFWState -> Window -> IO ()
 openWindowGLFW ref win = do
   maybeMonitor <-
-    case win^.winState of
-      FullScreen -> GLFW.getPrimaryMonitor
-      Windowed   -> return Nothing
-  glfwWin <- GLFW.createWindow (win^.winW) (win^.winH) (win^.winName)
+    case win^.windowState of
+      WindowFullscreen -> GLFW.getPrimaryMonitor
+      WindowFloating   -> return Nothing
+  glfwWin <- GLFW.createWindow (win^.windowWidth) (win^.windowHeight) (win^.windowName)
                 maybeMonitor Nothing
 
   ref & glfwWindow @~ glfwWin

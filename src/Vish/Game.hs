@@ -68,6 +68,10 @@ instance InputListener GameInput where
     appRef & appWorld.gameWaiting @~ False
   keyReleased (GameInput appRef) Key'Space =
     appRef & appWorld.gameWaiting @~ False
+  keyReleased (GameInput appRef) Key'F11 =
+    appRef & appWorld.gameWaiting @~ False
+  keyReleased (GameInput appRef) Key'Escape =
+      quitApp appRef
   keyReleased _ _ = return ()
 
 

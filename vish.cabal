@@ -78,6 +78,8 @@ library
                       Vish.Interpreter
                       Vish.Application.Data.App
                       Vish.Application.App
+                      Vish.Application.AppConfig
+                      Vish.Application.Graphics
                       Vish.Application.Data.Window
                       Vish.Application.Window
                       Vish.Application.Data.Input
@@ -93,6 +95,7 @@ library
   Other-modules:      Vish.Application.Backend
                       Vish.Application.Backend.Types
                       Vish.Application.Data.InputPrims
+                      Vish.Application.Data.AppConfig
 
   If flag(GLUT)
     Build-Depends:    GLUT (==2.7.*)

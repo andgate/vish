@@ -4,6 +4,7 @@ import           Vish.Application.Data.App
 import           Vish.Application.Data.Input
 import           Vish.Application.Data.Window
 import           Vish.Application.Backend
+import Vish.Application.AppConfig
 import           Vish.Application.Input
 import           Vish.Application.Window
 import           Vish.Graphics.Picture
@@ -28,7 +29,8 @@ playWithBackend backend world = do
   appRef <- newIORef =<< mkApp world
   appCreate appRef
 
-  window <- loadWindow
+  appConfig <- loadAppConfig
+  let window = appConfigToWindow appConfig
 
   let callbacks =
         Callbacks

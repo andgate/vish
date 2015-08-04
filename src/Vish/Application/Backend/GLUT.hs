@@ -93,23 +93,23 @@ initGLUT _ debug = do
 openWindowGLUT :: IORef GLUTState -> Window -> IO ()
 openWindowGLUT _ win = do
   GLUT.initialWindowSize
-    $= GL.Size (fromIntegral $ win^.winW) (fromIntegral $ win^.winH)
+    $= GL.Size (fromIntegral $ win^.windowWidth) (fromIntegral $ win^.windowHeight)
 
   GLUT.initialWindowPosition
-    $= GL.Position (fromIntegral $ win^.winX) (fromIntegral $ win^.winY)
+    $= GL.Position (fromIntegral $ win^.windowX) (fromIntegral $ win^.windowY)
 
-  GLUT.createWindow $ win^.winName
+  GLUT.createWindow $ win^.windowName
 
   GLUT.windowSize
-    $= GL.Size (fromIntegral $ win^.winW) (fromIntegral $ win^.winH)
+    $= GL.Size (fromIntegral $ win^.windowWidth) (fromIntegral $ win^.windowHeight)
 
-  case win^.winState of
-    FullScreen -> do
+  case win^.windowState of
+    WindowFullscreen -> do
       GLUT.gameModeCapabilities $=
-           [ GLUT.Where' GLUT.GameModeWidth GLUT.IsEqualTo $ win^.winW
-           , GLUT.Where' GLUT.GameModeHeight GLUT.IsEqualTo $ win^.winH ]
+           [ GLUT.Where' GLUT.GameModeWidth GLUT.IsEqualTo $ win^.windowWidth
+           , GLUT.Where' GLUT.GameModeHeight GLUT.IsEqualTo $ win^.windowHeight ]
       void GLUT.enterGameMode
-    Windowed -> return ()
+    WindowFloating -> return ()
 
   --  Switch some things.
   --  auto repeat interferes with key up / key down checks.
