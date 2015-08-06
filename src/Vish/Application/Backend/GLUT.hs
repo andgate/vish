@@ -19,9 +19,6 @@ import Graphics.UI.GLUT                    (get,($=))
 import qualified Graphics.UI.GLUT          as GLUT
 import qualified Graphics.Rendering.OpenGL as GL
 
-import qualified System.Exit as System
-import qualified System.Mem  as System
-
 
 -- | We don't maintain any state information for the GLUT backend,
 --   so this data type is empty.
@@ -171,8 +168,6 @@ callbackDisplay ref callbacks = do
 
       -- swap front and back buffers
       GLUT.swapBuffers
-      -- run gc to reduce pauses during mainloop (hopefully)
-      System.performGC
 
       -- Don't report errors by default.
       -- The windows OpenGL implementation seems to complain for no reason.

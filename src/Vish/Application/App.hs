@@ -18,6 +18,7 @@ import           Data.IORef
 import           Vish.Application.Data.IORef.Lens
 import           Data.Yaml
 import           Data.Maybe (fromMaybe)
+import qualified System.Mem  as System
 
 import           Graphics.Rendering.OpenGL    (get, ($=))
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -75,6 +76,8 @@ displayUpdate appRef backendRef = do
   appPostUpdate appRef
 
   handleAppStatus appRef backendRef
+
+  System.performGC
 
 handleAppStatus :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 handleAppStatus appRef backendRef = do

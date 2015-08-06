@@ -98,8 +98,7 @@ commandUpdate appRef command =
   case command of
     Done -> quitApp appRef
     SetBackground name _ -> gameSetBackground appRef name
-    Pause t _ -> --appDelay t
-      return ()
+    Pause t _ -> appDelay t
     Speak a m _ -> gameActorSpeak appRef a m
     ShowActor c _ -> gameShowActor appRef c
     _ -> print command

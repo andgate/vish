@@ -103,6 +103,14 @@ exitGLFW ref = do
 -- | Open a new window.
 openWindowGLFW :: IORef GLFWState -> Window -> IO ()
 openWindowGLFW ref win = do
+
+  --GLFW.windowHint $ GLFW.WindowHint'ContextVersionMajor 3
+  --GLFW.windowHint $ GLFW.WindowHint'ContextVersionMajor 2
+  --GLFW.windowHint $ GLFW.WindowHint'OpenGLForwardCompat False
+  --GLFW.windowHint $ GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core
+
+  GLFW.windowHint $ GLFW.WindowHint'Resizable False
+
   let (sizeX, sizeY) = win^.windowSize
   maybeMonitor <-
     case win^.windowState of
@@ -112,6 +120,8 @@ openWindowGLFW ref win = do
                 maybeMonitor Nothing
 
   ref & glfwWindow @~ glfwWin
+
+  GLFW.makeContextCurrent glfwWin
 
   -- Try to enable sync-to-vertical-refresh by setting the number
   -- of buffer swaps per vertical refresh to 1.
@@ -375,9 +385,8 @@ runMainLoopGLFW ref =
             GLFW.pollEvents
 
             join $ ref ^@ display
+
             GLFW.swapBuffers glfwWin
-            -- run gc to reduce pauses during mainloop (hopefully)
-            System.performGC
 
         runMainLoopGLFW ref
 

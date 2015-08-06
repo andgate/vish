@@ -27,8 +27,7 @@ createWindow appRef backendRef callbacks = do
   when debug . putStrLn $ "* c window\n"
 
   openWindow backendRef =<< appRef ^@ appWindow
-  dumpBackendState backendRef
-
+  
   installCallbacks backendRef callbacks
 
   -- Dump some debugging info
@@ -41,7 +40,7 @@ createWindow appRef backendRef callbacks = do
   when debug . putStrLn $ "* entering mainloop.."
 
   initGraphics
-  
+
   appCreate appRef
   runMainLoop backendRef
 
