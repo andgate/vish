@@ -6,7 +6,7 @@ import           Vish.Application.Data.Window
 import           Vish.Application.Internal.Backend
 import           Vish.Application.AppConfig
 import           Vish.Application.Internal.Input
-import           Vish.Application.Window
+import           Vish.Application.Internal.Window
 import           Vish.Graphics.Picture
 import           Vish.Application.Graphics
 
@@ -21,6 +21,7 @@ import qualified System.Mem  as System
 
 playWithBackend :: (Backend b, AppListener w) => b -> w -> IO ()
 playWithBackend backend world = do
+  backendRef <- newIORef backend
   appRef <- newIORef =<< mkApp world
 
   appConfig <- loadAppConfig
@@ -41,7 +42,7 @@ playWithBackend backend world = do
         , scrollCallback      = updateScrolledInput appRef
         }
 
-  createWindow appRef backend callbacks
+  createWindow appRef backendRef callbacks
 
 displayUpdate :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 displayUpdate appRef backendRef = do

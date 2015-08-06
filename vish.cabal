@@ -98,6 +98,7 @@ library
                       Vish.Application.Internal.Backend.Types
                       Vish.Application.Internal.Data.Input
                       Vish.Application.Internal.Input
+                      Vish.Application.Internal.Window
                       Vish.Application.Data.AppConfig
 
   If flag(GLUT)
