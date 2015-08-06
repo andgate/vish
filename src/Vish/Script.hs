@@ -6,12 +6,12 @@ import Data.Maybe
 import Data.Functor
 import Control.Applicative
 import Data.List as List
-import qualified Data.Set as S
 import qualified Data.HashTable.IO as H
 import Control.Monad.Free
 import qualified Data.Text as T
 import qualified Data.Attoparsec.Text as P
 
+import qualified Data.Set as S
 import qualified Data.List.Zipper as Z
 
 type Flags = H.BasicHashTable String Bool

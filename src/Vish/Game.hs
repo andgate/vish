@@ -3,17 +3,16 @@ module Vish.Game where
 import Vish.Script
 import Vish.Interpreter
 
-import Vish.Application.App
-import Vish.Application.Data.App
-import Vish.Application.Input
-
-import Vish.Graphics.Data.Picture (Picture)
-import qualified Vish.Graphics.Data.Picture as Pic
-import Vish.Graphics.Data.Texture
-import Vish.Graphics.Texture
+import GXK.App
+import GXK.Data.App
+import GXK.Input
+import GXK.Graphics.Data.Picture (Picture)
+import qualified GXK.Graphics.Data.Picture as Pic
+import GXK.Graphics.Data.Texture
+import GXK.Graphics.Texture
 
 import Control.Lens
-import Vish.Application.Data.IORef.Lens
+import GXK.Data.IORef.Lens
 import Control.Monad
 import Data.Monoid
 import Data.IORef
