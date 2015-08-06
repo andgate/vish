@@ -1,9 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Vish.Application.Backend.GLUT
+module Vish.Application.Internal.Backend.GLUT
   (GLUTState)
 where
 
-import Vish.Application.Backend.Types
+import Vish.Application.Internal.Backend.Types
 import Vish.Application.Data.Input (Key (..), MouseButton (..))
 import qualified Vish.Application.Data.Input as I
 

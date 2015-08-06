@@ -1,10 +1,10 @@
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Vish.Application.Backend.GLFW
+module Vish.Application.Internal.Backend.GLFW
   (GLFWState)
 where
 
-import Vish.Application.Backend.Types
+import Vish.Application.Internal.Backend.Types
 import Vish.Application.Data.Input (Key (..), MouseButton (..))
 import qualified Vish.Application.Data.Input as I
 import Vish.Application.Data.Window

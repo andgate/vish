@@ -93,20 +93,22 @@ library
 
                       Vish.Application.Data.IORef.Lens
 
-  Other-modules:      Vish.Application.Backend
-                      Vish.Application.Backend.Types
-                      Vish.Application.Data.InputPrims
+  Other-modules:      Vish.Application.Internal.App
+                      Vish.Application.Internal.Backend
+                      Vish.Application.Internal.Backend.Types
+                      Vish.Application.Internal.Data.Input
+                      Vish.Application.Internal.Input
                       Vish.Application.Data.AppConfig
 
   If flag(GLUT)
     Build-Depends:    GLUT (==2.7.*)
     CPP-Options:      -DWITHGLUT
-    Other-modules:    Vish.Application.Backend.GLUT
+    Other-modules:    Vish.Application.Internal.Backend.GLUT
 
   If flag(GLFW)
     Build-Depends:    GLFW-b >= 1.4 && < 2
     CPP-Options:      -DWITHGLFW
-    Other-modules:    Vish.Application.Backend.GLFW
+    Other-modules:    Vish.Application.Internal.Backend.GLFW
 
 
 executable TestGame

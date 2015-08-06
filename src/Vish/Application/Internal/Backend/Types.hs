@@ -1,7 +1,7 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Vish.Application.Backend.Types
-  ( module Vish.Application.Backend.Types
+module Vish.Application.Internal.Backend.Types
+  ( module Vish.Application.Internal.Backend.Types
   , module Vish.Application.Data.Window
   )
 where

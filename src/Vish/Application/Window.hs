@@ -6,7 +6,7 @@ where
 
 import Vish.Application.Data.App
 import Vish.Application.Data.Window
-import Vish.Application.Backend.Types
+import Vish.Application.Internal.Backend.Types
 import Vish.Application.Graphics
 
 import Control.Monad
@@ -27,7 +27,7 @@ createWindow appRef backendRef callbacks = do
   when debug . putStrLn $ "* c window\n"
 
   openWindow backendRef =<< appRef ^@ appWindow
-  
+
   installCallbacks backendRef callbacks
 
   -- Dump some debugging info

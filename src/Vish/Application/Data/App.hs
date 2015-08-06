@@ -4,7 +4,7 @@ module Vish.Application.Data.App where
 import Control.Lens
 import Data.IORef
 
-import Vish.Application.Data.Input (Input, mkInput)
+import Vish.Application.Internal.Data.Input (mkInput, Input)
 import Vish.Application.Data.Window
 
 import Vish.Graphics.Data.Picture
