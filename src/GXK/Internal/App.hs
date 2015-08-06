@@ -1,23 +1,23 @@
 module Vish.Application.Internal.App where
 
+import           Vish.Application.AppConfig
 import           Vish.Application.Data.App
 import           Vish.Application.Data.Input
 import           Vish.Application.Data.Window
+import           Vish.Application.Graphics
 import           Vish.Application.Internal.Backend
-import           Vish.Application.AppConfig
 import           Vish.Application.Internal.Input
 import           Vish.Application.Internal.Window
 import           Vish.Graphics.Picture
-import           Vish.Application.Graphics
 
 import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.IORef
-import           Vish.Application.Data.IORef.Lens
+import           Data.Maybe                        (fromMaybe)
 import           Data.Yaml
-import           Data.Maybe (fromMaybe)
-import qualified System.Mem  as System
+import qualified System.Mem                        as System
+import           Vish.Application.Data.IORef.Lens
 
 playWithBackend :: (Backend b, AppListener w) => b -> w -> IO ()
 playWithBackend backend world = do

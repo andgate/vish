@@ -13,6 +13,7 @@ initGraphics = do
 
 renderStart :: IO ()
 renderStart = do
+  GL.color $ GL.Color4 0 0 0 (1 :: GL.GLfloat)
   GL.clear [GL.ColorBuffer]
 
 renderEnd :: IO ()

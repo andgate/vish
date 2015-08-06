@@ -1,4 +1,4 @@
-module Vish.Util where
+module GHX.Util where
 
 fromBool :: Bool -> a -> Maybe a
 fromBool True  a = Just a
