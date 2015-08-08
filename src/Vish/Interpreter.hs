@@ -4,9 +4,9 @@ module Vish.Interpreter where
 
 import Vish.Script
 
-import GXK.Graphics.Data.Texture
-import GXK.Graphics.Texture
-import GXK.Graphics.Picture
+import Vish.Graphics.Data.Texture
+import Vish.Graphics.Texture
+import Vish.Graphics.Picture
 
 import Data.Maybe
 import Data.List

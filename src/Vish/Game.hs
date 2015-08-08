@@ -6,10 +6,12 @@ import Vish.Interpreter
 import GXK.App
 import GXK.Data.App
 import GXK.Input
-import GXK.Graphics.Data.Picture (Picture)
-import qualified GXK.Graphics.Data.Picture as Pic
-import GXK.Graphics.Data.Texture
-import GXK.Graphics.Texture
+import GXK.Window
+
+import Vish.Graphics
+import Vish.Graphics.Picture (Picture)
+import qualified Vish.Graphics.Picture as Pic
+import Vish.Graphics.Texture
 
 import Control.Lens
 import GXK.Data.IORef.Lens
@@ -23,23 +25,27 @@ data GameWorld = GameWorld
   , _gameBackgroundPic :: Picture
   , _gameStagePic :: Picture
   , _gameWaiting :: Bool
+  , _gameTexCache :: TexCache
   }
 
-mkGameWorld :: Script -> GameWorld
-mkGameWorld script =
+mkGameWorld :: Script -> IO GameWorld
+mkGameWorld script = do
+  texCache <- mkTexCache
   let script' = scriptToZipper script
-  in
-  GameWorld
-  { _gameCommands = script'
-  , _gameBackgroundPic = Pic.blank
-  , _gameStagePic = Pic.blank
-  , _gameWaiting = False
-  }
+  return GameWorld
+      { _gameCommands = script'
+      , _gameBackgroundPic = Pic.blank
+      , _gameStagePic = Pic.blank
+      , _gameWaiting = False
+      , _gameTexCache = texCache
+      }
 
 makeLenses ''GameWorld
 
 instance AppListener GameWorld where
-  appCreate = loadScript
+  appCreate appRef = do
+    initGraphics
+    loadScript appRef
 
   appUpdate appRef = do
     isWaiting <- appRef ^@ appWorld.gameWaiting
@@ -47,9 +53,16 @@ instance AppListener GameWorld where
     registerInputListener appRef $ GameInput appRef
 
   appDraw appRef = do
+    winSize  <- appRef ^@ appWindow.windowSize
+    texCache <- appRef ^@ appWorld.gameTexCache
+
     background <- appRef ^@ appWorld.gameBackgroundPic
     stage      <- appRef ^@ appWorld.gameStagePic
-    return $ background <> stage
+    let pic = background <> stage
+
+    renderStart
+    Pic.displayPicture texCache pic winSize
+    renderEnd
 
   appDispose _ =
     print "Disposing app"
@@ -77,7 +90,7 @@ instance InputListener GameInput where
 
 
 runScript :: Script -> IO ()
-runScript = play . mkGameWorld
+runScript = play <=< mkGameWorld
 
 scriptUpdate :: AppRef GameWorld -> IO ()
 scriptUpdate appRef = do
@@ -104,7 +117,7 @@ commandUpdate appRef command =
 
 loadScript :: AppRef GameWorld -> IO ()
 loadScript appRef = do
-  texCache <- appRef ^@ appGfx.gfxTexCache
+  texCache <- appRef ^@ appWorld.gameTexCache
   commands <- appRef ^@ appWorld.gameCommands
   initScript texCache $ Z.toList commands
 
