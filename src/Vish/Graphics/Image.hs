@@ -30,15 +30,15 @@ mkImageXYWH tex pos size=
     , imageSize = size
     }
 
-drawImages :: V2 Int -> [Image] -> IO ()
-drawImages screenSize imgs =
+drawAll :: V2 Int -> [Image] -> IO ()
+drawAll screenSize imgs =
   withModelview screenSize $
-    mapM_ drawImage imgs
+    mapM_ draw imgs
 
-drawImage :: Image -> IO ()
-drawImage Blank =
+draw :: Image -> IO ()
+draw Blank =
   return ()
-drawImage img =
+draw img =
   let tex = imageTexture img
       pos = imagePosition img
       size = imageSize img

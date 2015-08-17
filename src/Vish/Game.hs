@@ -8,8 +8,9 @@ import GXK.Data.App
 import GXK.Input
 import GXK.Window
 
-import Vish.Stage
-import Vish.Graphics
+import Vish.Stage (Stage (..))
+import qualified Vish.Stage as Stage
+import qualified Vish.Graphics as Graphics
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 import Vish.Graphics.Texture
@@ -38,7 +39,7 @@ mkGameWorld script = do
   let script' = scriptToZipper script
   return GameWorld
       { _gameCommands = script'
-      , _gameStage = emptyStage
+      , _gameStage = Stage.emptyStage
       , _gameWaiting = False
       , _gameTexCache = texCache
     }
@@ -47,10 +48,10 @@ makeLenses ''GameWorld
 
 instance AppListener GameWorld where
   appCreate appRef = do
-    initGraphics
+    Graphics.init
 
     (winW, winH) <- appRef ^@ appWindow.windowSize
-    appRef & appWorld . gameStage . stageSize @~ V2 winW winH
+    appRef & appWorld . gameStage @%~ Stage.setSize (V2 winW winH)
 
     loadScript appRef
 
@@ -62,9 +63,9 @@ instance AppListener GameWorld where
   appDraw appRef = do
     stage    <- appRef ^@ appWorld.gameStage
 
-    renderStart
-    drawStage stage
-    renderEnd
+    Graphics.startDraw
+    Stage.draw stage
+    Graphics.endDraw
 
   appDispose _ =
     print "Disposing app"
@@ -74,6 +75,11 @@ instance AppListener GameWorld where
 
   appResume _ =
     print "Application resumed."
+
+  appResize appRef (winW, winH) = do
+    let s = V2 winW winH
+    Graphics.resize s
+    appRef & appWorld.gameStage @%~ Stage.resize s
 
 data GameInput = GameInput (AppRef GameWorld)
 
@@ -130,7 +136,8 @@ gameSetBackground appRef name = do
   case eitherBgTex of
     Left msg -> print msg
     Right bgTex ->
-      appRef & appWorld.gameStage @%~ setStageBackground bgTex
+      let bgImg = Img.mkImage bgTex
+      in appRef & appWorld.gameStage @%~ Stage.setBackground bgImg
 
 
 gameShowActor :: AppRef GameWorld -> Actor -> IO ()
@@ -140,7 +147,8 @@ gameShowActor appRef actor = do
   case eitherActorTex of
     Left msg -> print msg
     Right actorTex ->
-      appRef & appWorld.gameStage @%~ setStageCenter actorTex
+      let actorImg = Img.mkImage actorTex
+      in appRef & appWorld.gameStage @%~ Stage.setCenter actorImg
 
 gameActorSpeak :: AppRef GameWorld -> Name -> String -> IO ()
 gameActorSpeak appRef name msg = do

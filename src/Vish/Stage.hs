@@ -15,9 +15,12 @@ import qualified Linear.V2 as Vec
 import qualified Linear.Vector as Vec
 
 import Control.Lens
+import Control.Arrow
 
-drawStage :: Stage -> IO ()
-drawStage stage =
+import System.IO.Unsafe
+
+draw :: Stage -> IO ()
+draw stage =
   let imgs =
         [ stage ^. stageBackground
         , stage ^. stageLeft
@@ -25,23 +28,66 @@ drawStage stage =
         , stage ^. stageCenter
         ]
       size = stage ^. stageSize
-  in Img.drawImages size imgs
+  in Img.drawAll size imgs
 
-setStageBackground :: Texture -> Stage -> Stage
-setStageBackground tex stage =
-  let pos = Vec.zero
-      size = texSize tex
-      img = Img.mkImageXYWH tex pos size
-  in stage & stageBackground .~ img
+resize :: V2 Int -> Stage -> Stage
+resize scrnSize stg =
+  let bgImg   = stg ^. stageBackground
+      lImg    = stg ^. stageLeft
+      rImg    = stg ^. stageRight
+      cntrImg = stg ^. stageCenter
+  in
+    setBackground bgImg
+      . setLeft lImg
+      . setRight rImg
+      . setCenter cntrImg
+      . setSize scrnSize
+      $ stg
 
-setStageCenter :: Texture -> Stage -> Stage
-setStageCenter tex stage =
-  let size = texSize tex
+setSize :: V2 Int -> Stage -> Stage
+setSize = (stageSize .~)
+
+setBackground :: Image -> Stage -> Stage
+setBackground Blank stage = stage
+setBackground img stage =
+  let tex = imageTexture img
+      pos = Vec.zero
+      size = fromIntegral <$> stage ^. stageSize
+      img' = Img.mkImageXYWH tex pos size
+  in stage & stageBackground .~ img'
+
+setLeft :: Image -> Stage -> Stage
+setLeft Blank stage = stage
+setLeft img stage =
+  let tex = imageTexture img
+      size = texSize . imageTexture $ img
       size' = calcActorSize stage size
       pos = calcCenterPos stage size'
 
-      img = Img.mkImageXYWH tex pos size'
-  in stage & stageCenter .~ img
+      img' = Img.mkImageXYWH tex pos size'
+  in stage & stageCenter .~ img'
+
+setRight :: Image -> Stage -> Stage
+setRight Blank stage = stage
+setRight img stage =
+  let tex = imageTexture img
+      size = texSize . imageTexture $ img
+      size' = calcActorSize stage size
+      pos = calcCenterPos stage size'
+
+      img' = Img.mkImageXYWH tex pos size'
+  in stage & stageCenter .~ img'
+
+setCenter :: Image -> Stage -> Stage
+setCenter Blank stage = stage
+setCenter img stage =
+  let tex = imageTexture img
+      size = texSize . imageTexture $ img
+      size' = calcActorSize stage size
+      pos = calcCenterPos stage size'
+
+      img' = Img.mkImageXYWH tex pos size'
+  in stage & stageCenter .~ img'
 
 calcActorSize :: Stage -> V2 Float -> V2 Float
 calcActorSize stage (V2 imgW imgH) =
@@ -55,6 +101,6 @@ calcActorSize stage (V2 imgW imgH) =
 
 calcCenterPos :: Stage -> V2 Float -> V2 Float
 calcCenterPos stage imgSize =
-  (stageSize' - imgSize) / 2
+  (stgSize - imgSize) / 2
   where
-    stageSize' = fromIntegral <$> (stage ^. stageSize)
+    stgSize = fromIntegral <$> (stage ^. stageSize)

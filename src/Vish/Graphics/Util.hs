@@ -19,11 +19,11 @@ gsizei = unsafeCoerce
 --   action to draw the model.
 withModelview :: V2 Int -> IO () -> IO ()
 withModelview size action = do
+  let V2 sx sy = fromIntegral <$> size
   GL.matrixMode   $= GL.Projection
   GL.preservingMatrix $ do
     GL.loadIdentity
-    let V2 sx sy = fromIntegral <$> size
-    GL.ortho 0 sx sy 0 0 (-100)
+    GL.ortho 0 sx sy 0 0 (-1)
     GL.matrixMode $= GL.Modelview 0
     action
     GL.matrixMode $= GL.Projection

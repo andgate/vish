@@ -91,7 +91,7 @@ drawTexXYWH tex (V2 x y) (V2 w h) = do
         GL.texCoord $ GL.TexCoord2 (gf tX) (gf tY)
         GL.vertex   $ GL.Vertex2   (gf vX) (gf vY))
       imagePath
-      [(0, 0), (1.0, 0), (1.0, 1.0), (0, 1.0)]
+      [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
 
   GL.currentColor $= oldColor
 
