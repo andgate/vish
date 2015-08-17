@@ -6,7 +6,6 @@ import Vish.Script
 
 import Vish.Graphics.Data.Texture
 import Vish.Graphics.Texture
-import Vish.Graphics.Picture
 
 import Data.Maybe
 import Data.List

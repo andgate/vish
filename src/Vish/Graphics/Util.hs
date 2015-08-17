@@ -4,6 +4,9 @@ import Unsafe.Coerce
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=))
 
+import Linear.V2 (V2 (..))
+import qualified Linear.V2 as Vec
+
 gf :: Float -> GL.GLfloat
 gf = unsafeCoerce
 {-# INLINE gf #-}
@@ -14,12 +17,12 @@ gsizei = unsafeCoerce
 
 -- | Set up the OpenGL rendering context for orthographic projection and run an
 --   action to draw the model.
-withModelview :: (Int, Int) -> IO () -> IO ()
-withModelview (sizeX, sizeY) action = do
+withModelview :: V2 Int -> IO () -> IO ()
+withModelview size action = do
   GL.matrixMode   $= GL.Projection
   GL.preservingMatrix $ do
     GL.loadIdentity
-    let (sx, sy) = (fromIntegral sizeX, fromIntegral sizeY)
+    let V2 sx sy = fromIntegral <$> size
     GL.ortho 0 sx sy 0 0 (-100)
     GL.matrixMode $= GL.Modelview 0
     action

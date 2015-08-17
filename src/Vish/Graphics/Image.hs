@@ -8,20 +8,21 @@ import Vish.Graphics.Data.Image
 import Vish.Graphics.Texture
 import Vish.Graphics.Util
 
-import Vish.Math.Vector (Vector2f (..))
-import qualified Vish.Math.Vector as Vec
+import Linear.V2 (V2 (..))
+import qualified Linear.V2 as Vec
+import qualified Linear.Vector as Vec
 
 mkImage :: Texture -> Image
 mkImage tex =
   let pos = Vec.zero
   in mkImageXY tex pos
 
-mkImageXY :: Texture -> Vector2f -> Image
+mkImageXY :: Texture -> V2 Float -> Image
 mkImageXY tex pos =
   let size = texSize tex
   in mkImageXYWH tex pos size
 
-mkImageXYWH :: Texture -> Vector2f -> Vector2f -> Image
+mkImageXYWH :: Texture -> V2 Float -> V2 Float -> Image
 mkImageXYWH tex pos size=
   Image
     { imageTexture = tex
@@ -29,7 +30,7 @@ mkImageXYWH tex pos size=
     , imageSize = size
     }
 
-drawImages :: (Int, Int) -> [Image] -> IO ()
+drawImages :: V2 Int -> [Image] -> IO ()
 drawImages screenSize imgs =
   withModelview screenSize $
     mapM_ drawImage imgs

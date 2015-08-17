@@ -21,6 +21,10 @@ import Data.Monoid
 import Data.IORef
 import qualified Data.List.Zipper as Z
 
+import Linear.V2 (V2 (..))
+import qualified Linear.V2 as Vec
+import qualified Linear.Vector as Vec
+
 data GameWorld = GameWorld
   { _gameCommands :: Z.Zipper ScriptCommand
   , _gameStage :: Stage
@@ -45,8 +49,8 @@ instance AppListener GameWorld where
   appCreate appRef = do
     initGraphics
 
-    winSize  <- appRef ^@ appWindow.windowSize
-    appRef & appWorld . gameStage . stageSize @~ winSize
+    (winW, winH) <- appRef ^@ appWindow.windowSize
+    appRef & appWorld . gameStage . stageSize @~ V2 winW winH
 
     loadScript appRef
 

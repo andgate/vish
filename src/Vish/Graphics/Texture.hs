@@ -6,8 +6,6 @@ where
 
 import Vish.Graphics.Util
 import Vish.Graphics.Data.Texture
-import Vish.Math.Vector (Vector2f (..))
-import qualified Vish.Math.Vector as Vec
 
 import Control.Monad
 import qualified Codec.Picture as JP
@@ -15,6 +13,10 @@ import qualified Codec.Picture.Types as JP
 import qualified Data.HashTable.IO as H
 import System.FilePath
 import qualified Data.Vector.Storable as V
+
+import Linear.V2 (V2 (..))
+import qualified Linear.V2 as Vec
+import qualified Linear.Vector as Vec
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=), get)
@@ -59,13 +61,13 @@ drawTex :: Texture -> IO ()
 drawTex tex =
   drawTexXY tex Vec.zero
 
-drawTexXY :: Texture -> Vector2f -> IO ()
+drawTexXY :: Texture -> V2 Float -> IO ()
 drawTexXY tex pos =
   let size = texSize tex
   in drawTexXYWH tex pos size
 
-drawTexXYWH :: Texture -> Vector2f -> Vector2f -> IO ()
-drawTexXYWH tex (Vector2f x y) (Vector2f w h) = do
+drawTexXYWH :: Texture -> V2 Float -> V2 Float -> IO ()
+drawTexXYWH tex (V2 x y) (V2 w h) = do
   --print $ "Drawing " ++ texPath tex ++ " " ++ show (x,y,w,h)
 
   -- Set up wrap and filtering mode
@@ -141,6 +143,6 @@ gpuLoadTexture path (JP.Image w h dat) pixelInternalFormat pixelFormat datatype 
 
   return Texture
     { texPath = path
-    , texSize = Vector2f (fromIntegral w) (fromIntegral h)
+    , texSize =  fromIntegral <$> V2 w h
     , texObject = tex
     }

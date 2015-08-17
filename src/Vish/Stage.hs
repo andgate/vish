@@ -10,8 +10,9 @@ import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 import Vish.Graphics.Texture (Texture (..))
 
-import Vish.Math.Vector (Vector2f (..))
-import qualified Vish.Math.Vector as Vec
+import Linear.V2 (V2 (..))
+import qualified Linear.V2 as Vec
+import qualified Linear.Vector as Vec
 
 import Control.Lens
 
@@ -42,18 +43,18 @@ setStageCenter tex stage =
       img = Img.mkImageXYWH tex pos size'
   in stage & stageCenter .~ img
 
-calcActorSize :: Stage -> Vector2f -> Vector2f
-calcActorSize stage (Vector2f imgW imgH) =
-  Vector2f imgW' imgH'
+calcActorSize :: Stage -> V2 Float -> V2 Float
+calcActorSize stage (V2 imgW imgH) =
+  V2 imgW' imgH'
   where
     imgW' = imgH' * res
     imgH' = fromIntegral stageH - (2 * padV)
     res = imgW / imgH
     padV = fromIntegral stageH / 8
-    (_, stageH) = stage ^. stageSize
+    V2 _ stageH = stage ^. stageSize
 
-calcCenterPos :: Stage -> Vector2f -> Vector2f
+calcCenterPos :: Stage -> V2 Float -> V2 Float
 calcCenterPos stage imgSize =
   (stageSize' - imgSize) / 2
   where
-    stageSize' = Vec.fromTuple $ (stage ^. stageSize) & both %~ fromIntegral
+    stageSize' = fromIntegral <$> (stage ^. stageSize)

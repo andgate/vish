@@ -1,6 +1,7 @@
 module Vish.Graphics.Data.Texture where
 
-import Vish.Math.Data.Vector
+import Linear.V2 (V2 (..))
+import qualified Linear.V2 as Vec
 
 import qualified Data.HashTable.IO as H
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -10,7 +11,7 @@ data BitmapData = BitmapData Int
 data Texture
         = Texture
         { texPath   :: String
-        , texSize   :: Vector2f
+        , texSize   :: V2 Float
         , texObject :: GL.TextureObject
         }
 
