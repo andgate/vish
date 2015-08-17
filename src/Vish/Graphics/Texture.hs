@@ -6,6 +6,8 @@ where
 
 import Vish.Graphics.Util
 import Vish.Graphics.Data.Texture
+import Vish.Math.Vector (Vector2f (..))
+import qualified Vish.Math.Vector as Vec
 
 import Control.Monad
 import qualified Codec.Picture as JP
@@ -53,9 +55,19 @@ fetchTexture texCache path =
   liftM (maybe (Left noTexMsg) Right) $ H.lookup texCache path
   where noTexMsg = "Texture not cached at " ++ path
 
-drawTexture :: Texture -> IO ()
-drawTexture tex = do
-  let Texture _ w h _ = tex
+drawTex :: Texture -> IO ()
+drawTex tex =
+  drawTexXY tex Vec.zero
+
+drawTexXY :: Texture -> Vector2f -> IO ()
+drawTexXY tex pos =
+  let size = texSize tex
+  in drawTexXYWH tex pos size
+
+drawTexXYWH :: Texture -> Vector2f -> Vector2f -> IO ()
+drawTexXYWH tex (Vector2f x y) (Vector2f w h) = do
+  --print $ "Drawing " ++ texPath tex ++ " " ++ show (x,y,w,h)
+
   -- Set up wrap and filtering mode
   GL.textureWrapMode GL.Texture2D GL.S $= (GL.Repeated, GL.Repeat)
   GL.textureWrapMode GL.Texture2D GL.T $= (GL.Repeated, GL.Repeat)
@@ -76,7 +88,7 @@ drawTexture tex = do
       (\(vX, vY) (tX, tY) -> do
         GL.texCoord $ GL.TexCoord2 (gf tX) (gf tY)
         GL.vertex   $ GL.Vertex2   (gf vX) (gf vY))
-      (imagePath (fromIntegral w) (fromIntegral h))
+      imagePath
       [(0, 0), (1.0, 0), (1.0, 1.0), (0, 1.0)]
 
   GL.currentColor $= oldColor
@@ -84,9 +96,9 @@ drawTexture tex = do
   GL.texture GL.Texture2D $= GL.Disabled
 
   where
-    imagePath :: Float -> Float -> [(Float, Float)]
-    imagePath w h =
-      [(0, 0), (w, 0), (w, h), (0,h)]
+    imagePath :: [(Float, Float)]
+    imagePath =
+      [(x, y), (x+w, y), (x+w, y+h), (x,y+h)]
 
 unloadTexture :: Texture -> IO ()
 unloadTexture tex = GL.deleteObjectName $ texObject tex
@@ -129,7 +141,6 @@ gpuLoadTexture path (JP.Image w h dat) pixelInternalFormat pixelFormat datatype 
 
   return Texture
     { texPath = path
-    , texWidth = w
-    , texHeight = h
+    , texSize = Vector2f (fromIntegral w) (fromIntegral h)
     , texObject = tex
     }

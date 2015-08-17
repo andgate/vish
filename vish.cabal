@@ -61,13 +61,17 @@ library
 
   exposed-modules:    Vish.Game
                       Vish.Script
+                      Vish.Data.Stage
+                      Vish.Stage
                       Vish.Interpreter
                       Vish.Graphics
-                      Vish.Graphics.Picture
-                      Vish.Graphics.Data.Picture
+                      Vish.Graphics.Image
+                      Vish.Graphics.Data.Image
                       Vish.Graphics.Texture
                       Vish.Graphics.Data.Texture
                       Vish.Graphics.Util
+                      Vish.Math.Data.Vector
+                      Vish.Math.Vector
 
 executable TestGame
   main-is:            TestGame.hs

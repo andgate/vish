@@ -8,9 +8,10 @@ import GXK.Data.App
 import GXK.Input
 import GXK.Window
 
+import Vish.Stage
 import Vish.Graphics
-import Vish.Graphics.Picture (Picture)
-import qualified Vish.Graphics.Picture as Pic
+import Vish.Graphics.Image (Image (..))
+import qualified Vish.Graphics.Image as Img
 import Vish.Graphics.Texture
 
 import Control.Lens
@@ -22,8 +23,7 @@ import qualified Data.List.Zipper as Z
 
 data GameWorld = GameWorld
   { _gameCommands :: Z.Zipper ScriptCommand
-  , _gameBackgroundPic :: Picture
-  , _gameStagePic :: Picture
+  , _gameStage :: Stage
   , _gameWaiting :: Bool
   , _gameTexCache :: TexCache
   }
@@ -34,17 +34,20 @@ mkGameWorld script = do
   let script' = scriptToZipper script
   return GameWorld
       { _gameCommands = script'
-      , _gameBackgroundPic = Pic.blank
-      , _gameStagePic = Pic.blank
+      , _gameStage = emptyStage
       , _gameWaiting = False
       , _gameTexCache = texCache
-      }
+    }
 
 makeLenses ''GameWorld
 
 instance AppListener GameWorld where
   appCreate appRef = do
     initGraphics
+
+    winSize  <- appRef ^@ appWindow.windowSize
+    appRef & appWorld . gameStage . stageSize @~ winSize
+
     loadScript appRef
 
   appUpdate appRef = do
@@ -53,15 +56,10 @@ instance AppListener GameWorld where
     registerInputListener appRef $ GameInput appRef
 
   appDraw appRef = do
-    winSize  <- appRef ^@ appWindow.windowSize
-    texCache <- appRef ^@ appWorld.gameTexCache
-
-    background <- appRef ^@ appWorld.gameBackgroundPic
-    stage      <- appRef ^@ appWorld.gameStagePic
-    let pic = background <> stage
+    stage    <- appRef ^@ appWorld.gameStage
 
     renderStart
-    Pic.displayPicture texCache pic winSize
+    drawStage stage
     renderEnd
 
   appDispose _ =
@@ -122,15 +120,23 @@ loadScript appRef = do
   initScript texCache $ Z.toList commands
 
 gameSetBackground :: AppRef GameWorld -> Name -> IO ()
-gameSetBackground appRef name =
-  appRef & appWorld.gameBackgroundPic @~ Pic.image name
+gameSetBackground appRef name = do
+  texCache <- appRef ^@ appWorld.gameTexCache
+  eitherBgTex <- fetchTexture texCache name
+  case eitherBgTex of
+    Left msg -> print msg
+    Right bgTex ->
+      appRef & appWorld.gameStage @%~ setStageBackground bgTex
 
 
 gameShowActor :: AppRef GameWorld -> Actor -> IO ()
 gameShowActor appRef actor = do
-  let actorPic = Pic.image . actorTag $ actor
-  appRef & appWorld.gameStagePic @~ actorPic
-  return ()
+  texCache <- appRef ^@ appWorld.gameTexCache
+  eitherActorTex <- fetchTexture texCache $ actorTag actor
+  case eitherActorTex of
+    Left msg -> print msg
+    Right actorTex ->
+      appRef & appWorld.gameStage @%~ setStageCenter actorTex
 
 gameActorSpeak :: AppRef GameWorld -> Name -> String -> IO ()
 gameActorSpeak appRef name msg = do
