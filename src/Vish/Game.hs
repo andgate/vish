@@ -120,7 +120,8 @@ commandUpdate appRef command =
     SetBackground name _ -> gameSetBackground appRef name
     Pause t _ -> appDelay t
     Speak a m _ -> gameActorSpeak appRef a m
-    ShowActor c _ -> gameShowActor appRef c
+    ShowActor c _ -> gameShowCenterActor appRef c
+    ShowActors l r _ -> gameShowActors appRef l r
     _ -> print command
 
 loadScript :: AppRef GameWorld -> IO ()
@@ -140,15 +141,32 @@ gameSetBackground appRef name = do
       in appRef & appWorld.gameStage @%~ Stage.setBackground bgImg
 
 
-gameShowActor :: AppRef GameWorld -> Actor -> IO ()
-gameShowActor appRef actor = do
+gameShowCenterActor :: AppRef GameWorld -> Actor -> IO ()
+gameShowCenterActor appRef actor =
+  gameShowActor appRef actor Stage.setCenter
+
+gameShowActors :: AppRef GameWorld -> Actor -> Actor -> IO ()
+gameShowActors appRef actorL actorR = do
+  gameShowLeftActor appRef actorL
+  gameShowRightActor appRef actorR
+
+gameShowLeftActor :: AppRef GameWorld -> Actor -> IO ()
+gameShowLeftActor appRef actor =
+  gameShowActor appRef actor Stage.setLeft
+
+gameShowRightActor :: AppRef GameWorld -> Actor -> IO ()
+gameShowRightActor appRef actor =
+  gameShowActor appRef actor Stage.setRight
+
+gameShowActor :: AppRef GameWorld -> Actor -> (Image -> Stage -> Stage) -> IO ()
+gameShowActor appRef actor stageSetter= do
   texCache <- appRef ^@ appWorld.gameTexCache
   eitherActorTex <- fetchTexture texCache $ actorTag actor
   case eitherActorTex of
     Left msg -> print msg
     Right actorTex ->
       let actorImg = Img.mkImage actorTex
-      in appRef & appWorld.gameStage @%~ Stage.setCenter actorImg
+      in appRef & appWorld.gameStage @%~ stageSetter actorImg
 
 gameActorSpeak :: AppRef GameWorld -> Name -> String -> IO ()
 gameActorSpeak appRef name msg = do
