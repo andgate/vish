@@ -8,12 +8,22 @@ import GXK.Data.App
 import GXK.Input
 import GXK.Window
 
-import Vish.Stage (Stage (..))
+import Vish.Stage (Stage (..), stageMsgBox)
 import qualified Vish.Stage as Stage
+
+import Vish.MessageBox (MessageBox)
+import qualified Vish.MessageBox as MsgBox
+
 import qualified Vish.Graphics as Graphics
+import qualified Vish.Graphics.Data.Color as C
+
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
+
 import Vish.Graphics.Texture
+
+import Vish.Graphics.Font (Font)
+import qualified Vish.Graphics.Font as Font
 
 import Control.Lens
 import GXK.Data.IORef.Lens
@@ -61,7 +71,7 @@ instance AppListener GameWorld where
     registerInputListener appRef $ GameInput appRef
 
   appDraw appRef = do
-    stage    <- appRef ^@ appWorld.gameStage
+    stage <- appRef ^@ appWorld.gameStage
 
     Graphics.startDraw
     Stage.draw stage
@@ -78,8 +88,10 @@ instance AppListener GameWorld where
 
   appResize appRef (winW, winH) = do
     let s = V2 winW winH
+
     Graphics.resize s
-    appRef & appWorld.gameStage @%~ Stage.resize s
+
+    appRef & appWorld.gameStage @%= Stage.resize s
 
 data GameInput = GameInput (AppRef GameWorld)
 
@@ -122,6 +134,7 @@ commandUpdate appRef command =
     Speak a m _ -> gameActorSpeak appRef a m
     ShowActor c _ -> gameShowCenterActor appRef c
     ShowActors l r _ -> gameShowActors appRef l r
+    SetFont fntName _ -> gameSetFont appRef fntName
     _ -> print command
 
 loadScript :: AppRef GameWorld -> IO ()
@@ -172,4 +185,21 @@ gameActorSpeak :: AppRef GameWorld -> Name -> String -> IO ()
 gameActorSpeak appRef name msg = do
   appRef & appWorld.gameWaiting @~ True
   --appRef & appWorld.gameStagePic @~ actorPic
+  gameBuildMessage appRef msg
   print $ name ++ ": " ++ msg
+
+gameSetFont :: AppRef GameWorld -> String -> IO ()
+gameSetFont appRef fntName = do
+  let fontPath = "data/font/" ++ fntName ++ ".ttf"
+  fnt <- Font.load fontPath
+  let msgBox = MsgBox.mkMsgBox fnt
+  appRef & appWorld.gameStage @%= Stage.setMsgBox msgBox
+
+gameBuildMessage :: AppRef GameWorld -> String -> IO ()
+gameBuildMessage appRef msg = do
+  maybeMsgBox <- appRef ^@ appWorld.gameStage.stageMsgBox
+  case maybeMsgBox of
+    Nothing ->
+      error "Cannot build msg, no font loaded."
+    Just msgBox ->
+      appRef & appWorld.gameStage @%= Stage.setMessage msg

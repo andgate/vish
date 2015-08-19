@@ -11,8 +11,8 @@ import Control.Monad
 import qualified Codec.Picture as JP
 import qualified Codec.Picture.Types as JP
 import qualified Data.HashTable.IO as H
-import System.FilePath
 import qualified Data.Vector.Storable as V
+import System.FilePath
 
 import Linear.V2 (V2 (..))
 import qualified Linear.V2 as Vec

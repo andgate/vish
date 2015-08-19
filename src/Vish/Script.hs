@@ -32,6 +32,7 @@ data Command next =
   | HideActors next
   | Pause Double next
   | SetBackground Background next
+  | SetFont String next
   | Speak Name String next
   | SetScene Scene next
   | SetFlag String Bool next
@@ -57,6 +58,9 @@ pause s = liftF $ Pause s ()
 
 setBackground :: Background -> Script
 setBackground bg = liftF $ SetBackground bg ()
+
+setFont :: String -> Script
+setFont fontName = liftF $ SetFont fontName ()
 
 speak :: String -> String -> Script
 speak name msg = liftF $ Speak name msg ()
@@ -88,6 +92,9 @@ nextCommand (Free (HideActors next)) =
 
 nextCommand (Free (SetBackground bg next)) =
   (SetBackground bg (), next)
+
+nextCommand (Free (SetFont fontName next)) =
+  (SetFont fontName (), next)
 
 nextCommand (Free (Pause s next)) =
   (Pause s (), next)

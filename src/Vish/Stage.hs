@@ -6,6 +6,11 @@ where
 
 import Vish.Data.Stage
 
+import qualified Vish.Layout as LO
+
+import Vish.MessageBox (MessageBox, msgBoxPosition, msgBoxSize, msgBoxBg, msgBoxImg)
+import qualified Vish.MessageBox as MsgBox
+
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 import Vish.Graphics.Texture (Texture (..))
@@ -16,36 +21,64 @@ import qualified Linear.Vector as Vec
 
 import Control.Lens
 import Control.Arrow
+import Control.Monad
 
 import System.IO.Unsafe
 
 draw :: Stage -> IO ()
-draw stage =
-  let imgs =
-        [ stage ^. stageBackground
-        , stage ^. stageLeft
-        , stage ^. stageRight
-        , stage ^. stageCenter
-        ]
-      size = stage ^. stageSize
-  in Img.drawAll size imgs
+draw stg = do
 
-resize :: V2 Int -> Stage -> Stage
-resize scrnSize stg =
+  let msgBox = stg ^. stageMsgBox
+      imgs =
+        [ stg ^. stageBackground
+        , stg ^. stageLeft
+        , stg ^. stageRight
+        , stg ^. stageCenter
+        , maybe Img.Blank (^. msgBoxBg) msgBox
+        , maybe Img.Blank (^. msgBoxImg) msgBox
+        ]
+      size = stg ^. stageSize
+  Img.drawAll size imgs
+
+resize :: V2 Int -> Stage -> IO Stage
+resize scrnSize stg = do
   let bgImg   = stg ^. stageBackground
       lImg    = stg ^. stageLeft
       rImg    = stg ^. stageRight
       cntrImg = stg ^. stageCenter
-  in
-    setBackground bgImg
-      . setLeft lImg
-      . setRight rImg
-      . setCenter cntrImg
-      . setSize scrnSize
-      $ stg
+      maybeMsgBox = stg ^. stageMsgBox
+      stg' =
+        setBackground bgImg
+          . setLeft lImg
+          . setRight rImg
+          . setCenter cntrImg
+          . setSize scrnSize
+          $ stg
+  case maybeMsgBox of
+    Nothing ->
+      return stg'
+    Just msgBox ->
+      setMsgBox msgBox stg'
 
 setSize :: V2 Int -> Stage -> Stage
 setSize = (stageSize .~)
+
+setMsgBox :: MessageBox -> Stage -> IO Stage
+setMsgBox msgBox stg = do
+  let stgSize = stg ^. stageSize
+  msgBox' <- MsgBox.resize stgSize msgBox
+  stg & return . (stageMsgBox .~ Just msgBox')
+
+setMessage :: String -> Stage -> IO Stage
+setMessage msg stg = do
+  let maybeMsgBox = stg ^. stageMsgBox
+  case maybeMsgBox of
+    Nothing ->
+      return stg
+    Just msgBox -> do
+      msgBox' <- MsgBox.setMessage msg msgBox
+      stg & return . (stageMsgBox .~ Just msgBox')
+
 
 setBackground :: Image -> Stage -> Stage
 setBackground Blank stage = stage
@@ -54,8 +87,8 @@ setBackground img stage =
       elemSize = texSize $ imageTexture img
 
       tex = imageTexture img
-      elemSize' = calcFillCropSize maxSize elemSize
-      elemPos = alignCenter maxSize elemSize'
+      elemSize' = LO.calcFillCropSize maxSize elemSize
+      elemPos = LO.alignCenter maxSize elemSize'
 
       img' = Img.mkImageXYWH tex elemPos elemSize'
   in stage & stageBackground .~ img'
@@ -68,8 +101,8 @@ setLeft img stage =
       elemSize = texSize $ imageTexture img
 
       tex = imageTexture img
-      elemSize' = calcFitSize halfMaxSize elemSize
-      elemPos = alignBottomCenter halfMaxSize elemSize'
+      elemSize' = LO.calcFitSize halfMaxSize elemSize
+      elemPos = LO.alignBottomCenter halfMaxSize elemSize'
 
       img' = Img.mkImageXYWH tex elemPos elemSize'
   in stage & stageLeft .~ img'
@@ -82,8 +115,8 @@ setRight img stage =
       elemSize = texSize $ imageTexture img
 
       tex = imageTexture img
-      elemSize' = calcFitSize halfMaxSize elemSize
-      elemPos = alignBottomCenter halfMaxSize elemSize'
+      elemSize' = LO.calcFitSize halfMaxSize elemSize
+      elemPos = LO.alignBottomCenter halfMaxSize elemSize'
       elemPos' = elemPos & Vec._x +~ (halfMaxSize ^. Vec._x)
 
       img' = Img.mkImageXYWH tex elemPos' elemSize'
@@ -96,60 +129,8 @@ setCenter img stage =
       elemSize = texSize $ imageTexture img
 
       tex = imageTexture img
-      elemSize' = calcFitSize maxSize elemSize
-      elemPos = alignBottomCenter maxSize elemSize'
+      elemSize' = LO.calcFitSize maxSize elemSize
+      elemPos = LO.alignBottomCenter maxSize elemSize'
 
       img' = Img.mkImageXYWH tex elemPos elemSize'
   in stage & stageCenter .~ img'
-
-calcFitSize :: V2 Float -> V2 Float -> V2 Float
-calcFitSize (V2 maxW maxH) elemSize =
-  if maxW > maxH
-    then calcSizeByHeight maxH elemSize
-    else calcSizeByWidth maxW elemSize
-
-calcFillCropSize :: V2 Float -> V2 Float -> V2 Float
-calcFillCropSize (V2 maxW maxH) (V2 elemW elemH) =
-  if maxW > maxH
-    then if maxH > elemH'
-      then V2 elemW' maxH
-      else V2 maxW elemH'
-    else if maxW > elemW'
-      then V2 maxW elemH'
-      else V2 elemW' maxH
-
-  where
-    res = elemW / elemH
-    elemW' = maxH * res
-    elemH' = maxW / res
-
-calcSizeByWidth :: Float -> V2 Float -> V2 Float
-calcSizeByWidth maxW (V2 elemW elemH) =
-  V2 elemW' elemH'
-  where
-    elemW' = maxW
-    elemH' = elemW' * res
-    res = elemH / elemW
-
-calcSizeByHeight :: Float -> V2 Float -> V2 Float
-calcSizeByHeight maxH (V2 elemW elemH) =
-  V2 elemW' elemH'
-  where
-    elemW' = elemH' * res
-    elemH' = maxH
-    res = elemW / elemH
-
-alignBottomCenter :: V2 Float -> V2 Float -> V2 Float
-alignBottomCenter (V2 cellW cellH) (V2 elemW elemH) =
-  V2 x y
-  where
-    x = (cellW - elemW) / 2
-    y = cellH - elemH
-
-alignCenter :: V2 Float -> V2 Float -> V2 Float
-alignCenter cellSize elemSize =
-  (cellSize - elemSize) / 2
-
-alignBottom :: V2 Float -> V2 Float -> V2 Float
-alignBottom (V2 _ cellY) (V2 _ elemY) =
-  V2 0 (cellY - elemY)

@@ -1,5 +1,8 @@
 module Vish.Data.Stage where
 
+import Vish.MessageBox (MessageBox)
+import qualified Vish.MessageBox as MsgBox
+
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 
@@ -10,12 +13,13 @@ import qualified Linear.Vector as Vec
 import Control.Lens
 
 data Stage = Stage
- { _stageSize :: V2 Int
- , _stageBackground :: Image
- , _stageLeft :: Image
- , _stageCenter :: Image
- , _stageRight :: Image
- }
+  { _stageSize :: V2 Int
+  , _stageBackground :: Image
+  , _stageLeft :: Image
+  , _stageCenter :: Image
+  , _stageRight :: Image
+  , _stageMsgBox :: Maybe MessageBox
+  }
 
 emptyStage :: Stage
 emptyStage =
@@ -25,6 +29,7 @@ emptyStage =
    , _stageLeft = Img.Blank
    , _stageCenter = Img.Blank
    , _stageRight = Img.Blank
+   , _stageMsgBox = Nothing
    }
 
 makeLenses ''Stage

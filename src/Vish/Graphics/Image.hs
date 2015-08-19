@@ -5,8 +5,12 @@ module Vish.Graphics.Image
 where
 
 import Vish.Graphics.Data.Image
-import Vish.Graphics.Texture
-import Vish.Graphics.Util
+
+import Vish.Graphics.Texture (Texture (..))
+import qualified Vish.Graphics.Texture as Tex
+import qualified Vish.Graphics.Util as Util
+
+import Control.Monad
 
 import Linear.V2 (V2 (..))
 import qualified Linear.V2 as Vec
@@ -30,16 +34,23 @@ mkImageXYWH tex pos size=
     , imageSize = size
     }
 
-drawAll :: V2 Int -> [Image] -> IO ()
-drawAll screenSize imgs =
-  withModelview screenSize $
-    mapM_ draw imgs
+delete :: Image -> IO ()
+delete = Tex.unloadTexture . imageTexture
 
-draw :: Image -> IO ()
-draw Blank =
-  return ()
-draw img =
-  let tex = imageTexture img
-      pos = imagePosition img
-      size = imageSize img
-  in drawTexXYWH tex pos size
+drawAll :: V2 Int -> [Image] -> IO ()
+drawAll scrnSize imgs =
+  Util.withModelview scrnSize $
+    forM_ imgs drawInView
+
+
+draw :: V2 Int -> Image -> IO ()
+draw scrnSize img =
+  Util.withModelview scrnSize $
+    drawInView img
+
+drawInView :: Image -> IO ()
+drawInView img =
+  case img of
+    Blank -> return ()
+    Image tex pos size ->
+      Tex.drawTexXYWH tex pos size
