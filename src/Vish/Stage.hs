@@ -71,11 +71,19 @@ setMessage msg stg = do
   msgBox' <- MsgBox.setMessage msg msgBox
   stg & return . (stageMsgBox .~ msgBox')
 
+clearMessage :: Stage -> IO Stage
+clearMessage stg = do
+  msgBoxBg'  <- Img.delete (stg ^. stageMsgBox . msgBoxBg)
+  msgBoxImg' <- Img.delete (stg ^. stageMsgBox . msgBoxImg)
+  stg & return
+      . (stageMsgBox . msgBoxBg .~ msgBoxBg')
+      . (stageMsgBox . msgBoxImg .~ msgBoxImg')
+
 
 setBackground :: Image -> Stage -> Stage
-setBackground Blank stage = stage
-setBackground img stage =
-  let maxSize = fromIntegral <$> stage ^. stageSize
+setBackground Blank stg = stg
+setBackground img stg =
+  let maxSize = fromIntegral <$> stg ^. stageSize
       elemSize = texSize $ imageTexture img
 
       tex = imageTexture img
@@ -83,12 +91,18 @@ setBackground img stage =
       elemPos = LO.alignCenter maxSize elemSize'
 
       img' = Img.mkImageXYWH tex elemPos elemSize'
-  in stage & stageBackground .~ img'
+  in stg & stageBackground .~ img'
+
+clearBg :: Stage -> IO Stage
+clearBg stg = do
+  bg' <- Img.delete (stg ^. stageBackground)
+  stg & return
+      . (stageBackground .~ bg')
 
 setLeft :: Image -> Stage -> Stage
-setLeft Blank stage = stage
-setLeft img stage =
-  let maxSize = fromIntegral <$> stage ^. stageSize
+setLeft Blank stg = stg
+setLeft img stg =
+  let maxSize = fromIntegral <$> stg ^. stageSize
       halfMaxSize = maxSize & Vec._x //~ 2
       elemSize = texSize $ imageTexture img
 
@@ -97,12 +111,13 @@ setLeft img stage =
       elemPos = LO.alignBottomCenter halfMaxSize elemSize'
 
       img' = Img.mkImageXYWH tex elemPos elemSize'
-  in stage & stageLeft .~ img'
+  in stg & (stageLeft .~ img')
+         . (stageCenter .~ Img.Blank)
 
 setRight :: Image -> Stage -> Stage
-setRight Blank stage = stage
-setRight img stage =
-  let maxSize = fromIntegral <$> stage ^. stageSize
+setRight Blank stg = stg
+setRight img stg =
+  let maxSize = fromIntegral <$> stg ^. stageSize
       halfMaxSize = maxSize & Vec._x //~ 2
       elemSize = texSize $ imageTexture img
 
@@ -112,12 +127,13 @@ setRight img stage =
       elemPos' = elemPos & Vec._x +~ (halfMaxSize ^. Vec._x)
 
       img' = Img.mkImageXYWH tex elemPos' elemSize'
-  in stage & stageRight .~ img'
+  in stg & (stageRight .~ img')
+         . (stageCenter .~ Img.Blank)
 
 setCenter :: Image -> Stage -> Stage
-setCenter Blank stage = stage
-setCenter img stage =
-  let maxSize = fromIntegral <$> stage ^. stageSize
+setCenter Blank stg = stg
+setCenter img stg =
+  let maxSize = fromIntegral <$> stg ^. stageSize
       elemSize = texSize $ imageTexture img
 
       tex = imageTexture img
@@ -125,4 +141,6 @@ setCenter img stage =
       elemPos = LO.alignBottomCenter maxSize elemSize'
 
       img' = Img.mkImageXYWH tex elemPos elemSize'
-  in stage & stageCenter .~ img'
+  in stg & (stageCenter .~ img')
+         . (stageLeft .~ Img.Blank)
+         . (stageRight .~ Img.Blank)

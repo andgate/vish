@@ -34,9 +34,6 @@ mkImageXYWH tex pos size=
     , imageSize = size
     }
 
-delete :: Image -> IO ()
-delete = Tex.unloadTexture . imageTexture
-
 drawAll :: V2 Int -> [Image] -> IO ()
 drawAll scrnSize imgs =
   Util.withModelview scrnSize $
@@ -54,3 +51,11 @@ drawInView img =
     Blank -> return ()
     Image tex pos size ->
       Tex.drawTexXYWH tex pos size
+
+
+delete :: Image -> IO Image
+delete Blank =
+  return Blank
+delete img = do
+  Tex.unloadTexture . imageTexture $ img
+  return Blank

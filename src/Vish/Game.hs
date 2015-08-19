@@ -5,7 +5,10 @@ module Vish.Game
 where
 
 import Vish.Data.Game
-import Vish.Script
+
+import Vish.Script (Script, ScriptCommand, Name, Actor)
+import qualified Vish.Script as S
+
 import Vish.Interpreter
 
 import GXK.App
@@ -25,7 +28,7 @@ import qualified Vish.Graphics.Data.Color as C
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 
-import Vish.Graphics.Texture
+import qualified Vish.Graphics.Texture as Tex
 
 import Vish.Graphics.Font (Font)
 import qualified Vish.Graphics.Font as Font
@@ -62,14 +65,15 @@ instance AppListener GameWorld where
     Stage.draw stage
     Graphics.endDraw
 
-  appDispose _ =
-    print "Disposing app"
+  appDispose appRef = do
+    texCache <- appRef ^@ appWorld.gameTexCache
+    Tex.scrubTexCache texCache
 
   appPause _ =
-    print "Application paused."
+    return ()
 
   appResume _ =
-    print "Application resumed."
+    return ()
 
   appResize appRef (winW, winH) = do
     let s = V2 winW winH
@@ -109,12 +113,12 @@ scriptUpdate appRef = do
 commandUpdate :: AppRef GameWorld -> ScriptCommand -> IO ()
 commandUpdate appRef command =
   case command of
-    Done -> quitApp appRef
-    SetBackground name _ -> gameSetBackground appRef name
-    Pause t _ -> appDelay t
-    Speak a m _ -> gameActorSpeak appRef a m
-    ShowActor c _ -> gameShowCenterActor appRef c
-    ShowActors l r _ -> gameShowActors appRef l r
+    S.Done -> quitApp appRef
+    S.SetBackground name _ -> setBackground appRef name
+    S.Pause t _ -> appDelay t
+    S.Speak a m _ -> actorSpeak appRef a m
+    S.ShowActor c _ -> showCenterActor appRef c
+    S.ShowActors l r _ -> showActors appRef l r
     _ -> print command
 
 loadScript :: AppRef GameWorld -> IO ()
@@ -123,10 +127,10 @@ loadScript appRef = do
   commands <- appRef ^@ appWorld.gameCommands
   initScript texCache $ Z.toList commands
 
-gameSetBackground :: AppRef GameWorld -> Name -> IO ()
-gameSetBackground appRef name = do
+setBackground :: AppRef GameWorld -> Name -> IO ()
+setBackground appRef name = do
   texCache <- appRef ^@ appWorld.gameTexCache
-  eitherBgTex <- fetchTexture texCache name
+  eitherBgTex <- Tex.fetchTexture texCache name
   case eitherBgTex of
     Left msg -> print msg
     Right bgTex ->
@@ -134,40 +138,39 @@ gameSetBackground appRef name = do
       in appRef & appWorld.gameStage @%~ Stage.setBackground bgImg
 
 
-gameShowCenterActor :: AppRef GameWorld -> Actor -> IO ()
-gameShowCenterActor appRef actor =
-  gameShowActor appRef actor Stage.setCenter
+showCenterActor :: AppRef GameWorld -> Actor -> IO ()
+showCenterActor appRef actor =
+  showActor appRef actor Stage.setCenter
 
-gameShowActors :: AppRef GameWorld -> Actor -> Actor -> IO ()
-gameShowActors appRef actorL actorR = do
-  gameShowLeftActor appRef actorL
-  gameShowRightActor appRef actorR
+showActors :: AppRef GameWorld -> Actor -> Actor -> IO ()
+showActors appRef actorL actorR = do
+  showLeftActor appRef actorL
+  showRightActor appRef actorR
 
-gameShowLeftActor :: AppRef GameWorld -> Actor -> IO ()
-gameShowLeftActor appRef actor =
-  gameShowActor appRef actor Stage.setLeft
+showLeftActor :: AppRef GameWorld -> Actor -> IO ()
+showLeftActor appRef actor =
+  showActor appRef actor Stage.setLeft
 
-gameShowRightActor :: AppRef GameWorld -> Actor -> IO ()
-gameShowRightActor appRef actor =
-  gameShowActor appRef actor Stage.setRight
+showRightActor :: AppRef GameWorld -> Actor -> IO ()
+showRightActor appRef actor =
+  showActor appRef actor Stage.setRight
 
-gameShowActor :: AppRef GameWorld -> Actor -> (Image -> Stage -> Stage) -> IO ()
-gameShowActor appRef actor stageSetter= do
+showActor :: AppRef GameWorld -> Actor -> (Image -> Stage -> Stage) -> IO ()
+showActor appRef actor stageSetter= do
   texCache <- appRef ^@ appWorld.gameTexCache
-  eitherActorTex <- fetchTexture texCache $ actorTag actor
+  eitherActorTex <- Tex.fetchTexture texCache $ S.actorTag actor
   case eitherActorTex of
     Left msg -> print msg
     Right actorTex ->
       let actorImg = Img.mkImage actorTex
       in appRef & appWorld.gameStage @%~ stageSetter actorImg
 
-gameActorSpeak :: AppRef GameWorld -> Name -> String -> IO ()
-gameActorSpeak appRef name msg = do
+actorSpeak :: AppRef GameWorld -> Name -> String -> IO ()
+actorSpeak appRef name msg = do
   appRef & appWorld.gameWaiting @~ True
-  --appRef & appWorld.gameStagePic @~ actorPic
-  gameBuildMessage appRef msg
-  print $ name ++ ": " ++ msg
+  setMessage appRef msg
 
-gameBuildMessage :: AppRef GameWorld -> String -> IO ()
-gameBuildMessage appRef msg = do
+setMessage :: AppRef GameWorld -> String -> IO ()
+setMessage appRef msg = do
+  appRef & appWorld.gameStage @%= Stage.clearMessage
   appRef & appWorld.gameStage @%= Stage.setMessage msg
