@@ -34,8 +34,8 @@ draw stg = do
         , stg ^. stageLeft
         , stg ^. stageRight
         , stg ^. stageCenter
-        , maybe Img.Blank (^. msgBoxBg) msgBox
-        , maybe Img.Blank (^. msgBoxImg) msgBox
+        , msgBox ^. msgBoxBg
+        , msgBox ^. msgBoxImg
         ]
       size = stg ^. stageSize
   Img.drawAll size imgs
@@ -46,7 +46,7 @@ resize scrnSize stg = do
       lImg    = stg ^. stageLeft
       rImg    = stg ^. stageRight
       cntrImg = stg ^. stageCenter
-      maybeMsgBox = stg ^. stageMsgBox
+      msgBox = stg ^. stageMsgBox
       stg' =
         setBackground bgImg
           . setLeft lImg
@@ -54,11 +54,7 @@ resize scrnSize stg = do
           . setCenter cntrImg
           . setSize scrnSize
           $ stg
-  case maybeMsgBox of
-    Nothing ->
-      return stg'
-    Just msgBox ->
-      setMsgBox msgBox stg'
+  setMsgBox msgBox stg'
 
 setSize :: V2 Int -> Stage -> Stage
 setSize = (stageSize .~)
@@ -67,17 +63,13 @@ setMsgBox :: MessageBox -> Stage -> IO Stage
 setMsgBox msgBox stg = do
   let stgSize = stg ^. stageSize
   msgBox' <- MsgBox.resize stgSize msgBox
-  stg & return . (stageMsgBox .~ Just msgBox')
+  stg & return . (stageMsgBox .~ msgBox')
 
 setMessage :: String -> Stage -> IO Stage
 setMessage msg stg = do
-  let maybeMsgBox = stg ^. stageMsgBox
-  case maybeMsgBox of
-    Nothing ->
-      return stg
-    Just msgBox -> do
-      msgBox' <- MsgBox.setMessage msg msgBox
-      stg & return . (stageMsgBox .~ Just msgBox')
+  let msgBox = stg ^. stageMsgBox
+  msgBox' <- MsgBox.setMessage msg msgBox
+  stg & return . (stageMsgBox .~ msgBox')
 
 
 setBackground :: Image -> Stage -> Stage

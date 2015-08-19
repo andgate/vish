@@ -1,7 +1,7 @@
 module Main where
 
 import Vish.Script
-import Vish.Game
+import qualified Vish as Vish
 
 simpleScript :: Script
 simpleScript = do
@@ -15,4 +15,4 @@ simpleScript = do
 
 main :: IO ()
 main =
-  runScript simpleScript
+  Vish.play simpleScript

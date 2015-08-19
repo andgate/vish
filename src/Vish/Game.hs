@@ -1,5 +1,10 @@
-module Vish.Game where
+module Vish.Game
+  ( module Vish.Game
+  , module Vish.Data.Game
+  )
+where
 
+import Vish.Data.Game
 import Vish.Script
 import Vish.Interpreter
 
@@ -35,26 +40,6 @@ import qualified Data.List.Zipper as Z
 import Linear.V2 (V2 (..))
 import qualified Linear.V2 as Vec
 import qualified Linear.Vector as Vec
-
-data GameWorld = GameWorld
-  { _gameCommands :: Z.Zipper ScriptCommand
-  , _gameStage :: Stage
-  , _gameWaiting :: Bool
-  , _gameTexCache :: TexCache
-  }
-
-mkGameWorld :: Script -> IO GameWorld
-mkGameWorld script = do
-  texCache <- mkTexCache
-  let script' = scriptToZipper script
-  return GameWorld
-      { _gameCommands = script'
-      , _gameStage = Stage.emptyStage
-      , _gameWaiting = False
-      , _gameTexCache = texCache
-    }
-
-makeLenses ''GameWorld
 
 instance AppListener GameWorld where
   appCreate appRef = do
@@ -107,10 +92,6 @@ instance InputListener GameInput where
   keyReleased (GameInput appRef) Key'Escape =
       quitApp appRef
   keyReleased _ _ = return ()
-
-
-runScript :: Script -> IO ()
-runScript = play <=< mkGameWorld
 
 scriptUpdate :: AppRef GameWorld -> IO ()
 scriptUpdate appRef = do
@@ -197,9 +178,4 @@ gameSetFont appRef fntName = do
 
 gameBuildMessage :: AppRef GameWorld -> String -> IO ()
 gameBuildMessage appRef msg = do
-  maybeMsgBox <- appRef ^@ appWorld.gameStage.stageMsgBox
-  case maybeMsgBox of
-    Nothing ->
-      error "Cannot build msg, no font loaded."
-    Just msgBox ->
-      appRef & appWorld.gameStage @%= Stage.setMessage msg
+  appRef & appWorld.gameStage @%= Stage.setMessage msg

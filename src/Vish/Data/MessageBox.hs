@@ -16,23 +16,23 @@ import Control.Lens
 
 data MessageBox =
   MessageBox
-  { _msgBoxContent  :: String
-  , _msgBoxBg       :: Image
-  , _msgBoxImg      :: Image
-  , _msgBoxPosition :: V2 Float
-  , _msgBoxSize     :: V2 Float
-  , _msgBoxFontStyle     :: Font.Style
+  { _msgBoxContent   :: String
+  , _msgBoxBg        :: Image
+  , _msgBoxImg       :: Image
+  , _msgBoxPosition  :: V2 Float
+  , _msgBoxSize      :: V2 Float
+  , _msgBoxFontStyle :: Font.Style
   }
 
 mkMsgBox :: Font -> MessageBox
 mkMsgBox fnt =
   MessageBox
     { _msgBoxFontStyle = Font.Style fnt C.black 12
-    , _msgBoxContent  = ""
-    , _msgBoxBg       = Img.Blank
-    , _msgBoxImg      = Img.Blank
-    , _msgBoxPosition = Vec.zero
-    , _msgBoxSize     = Vec.zero
+    , _msgBoxContent   = ""
+    , _msgBoxBg        = Img.Blank
+    , _msgBoxImg       = Img.Blank
+    , _msgBoxPosition  = Vec.zero
+    , _msgBoxSize      = Vec.zero
     }
 
 makeLenses ''MessageBox
