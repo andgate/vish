@@ -115,7 +115,6 @@ commandUpdate appRef command =
     Speak a m _ -> gameActorSpeak appRef a m
     ShowActor c _ -> gameShowCenterActor appRef c
     ShowActors l r _ -> gameShowActors appRef l r
-    SetFont fntName _ -> gameSetFont appRef fntName
     _ -> print command
 
 loadScript :: AppRef GameWorld -> IO ()
@@ -168,13 +167,6 @@ gameActorSpeak appRef name msg = do
   --appRef & appWorld.gameStagePic @~ actorPic
   gameBuildMessage appRef msg
   print $ name ++ ": " ++ msg
-
-gameSetFont :: AppRef GameWorld -> String -> IO ()
-gameSetFont appRef fntName = do
-  let fontPath = "data/font/" ++ fntName ++ ".ttf"
-  fnt <- Font.load fontPath
-  let msgBox = MsgBox.mkMsgBox fnt
-  appRef & appWorld.gameStage @%= Stage.setMsgBox msgBox
 
 gameBuildMessage :: AppRef GameWorld -> String -> IO ()
 gameBuildMessage appRef msg = do

@@ -5,7 +5,6 @@ import qualified Vish as Vish
 
 simpleScript :: Script
 simpleScript = do
-  setFont "arial-black"
   setBackground "Jotaro's Room"
   showActor "Jotaro" "cool"
   showActors "Jotaro" "cool" "Jotaro" "cool"
