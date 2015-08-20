@@ -27,7 +27,7 @@ import System.FilePath
 
 load :: FilePath -> FilePath -> IO TextureAtlas
 load texPath atlasPath = do
-  tex <- liftM (either error id) $ loadTexture texPath
+  tex <- loadTexture texPath
   atlasRegs <- loadAtlas atlasPath
   let texSize = textureSize tex
       texRegions = HM.fromList . map (toTexCoords texSize) $ atlasRegs

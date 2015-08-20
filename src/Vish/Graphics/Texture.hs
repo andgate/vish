@@ -4,13 +4,12 @@ module Vish.Graphics.Texture
   )
 where
 
-import Vish.Graphics.Util
 import Vish.Graphics.Data.Texture
+import Vish.Graphics.Util
 
 import Control.Monad
 import qualified Codec.Picture as JP
 import qualified Codec.Picture.Types as JP
-import qualified Data.HashTable.IO as H
 import qualified Data.Vector.Storable as V
 
 import Linear.V2 (V2 (..))
@@ -21,39 +20,6 @@ import Graphics.Rendering.OpenGL.GL (($=), get)
 
 supportedExtensions :: [String]
 supportedExtensions = ["bmp", "jpg", "png", "tga", "tiff"]
-
-mkTexCache :: IO TexCache
-mkTexCache = H.new
-
-installTexture :: TexCache -> FilePath -> String -> IO ()
-installTexture texCache path tag =
-  loadTexture path >>= either error (cacheTexture texCache tag)
-
-uncacheTexture :: TexCache -> String -> IO ()
-uncacheTexture = H.delete
-
-uninstallTexture :: TexCache -> String -> IO ()
-uninstallTexture texCache tag =
-  fetchTexture texCache tag >>= either putStrLn (unsafeUninstallTexture texCache tag)
-
-unsafeUninstallTexture :: TexCache -> String -> Texture -> IO ()
-unsafeUninstallTexture texCache tag tex =
-  uncacheTexture texCache tag >> unloadTexture tex
-
--- | Uninstall all the textures and empty the
--- entries in the texture cache.
-scrubTexCache :: TexCache -> IO ()
-scrubTexCache texCache =
-  H.toList texCache >>= mapM_ (uncurry $ unsafeUninstallTexture texCache)
-
-cacheTexture :: TexCache -> String -> Texture -> IO ()
-cacheTexture texCache tag tex =
-  H.insert texCache tag tex
-
-fetchTexture :: TexCache -> String -> IO (Either String Texture)
-fetchTexture texCache path =
-  liftM (maybe (Left noTexMsg) Right) $ H.lookup texCache path
-  where noTexMsg = "Texture not cached at " ++ path
 
 drawTex :: Texture -> IO ()
 drawTex tex =
@@ -103,9 +69,11 @@ drawTexXYWH tex (V2 x y) (V2 w h) = do
 unloadTexture :: Texture -> IO ()
 unloadTexture tex = GL.deleteObjectName $ textureObject tex
 
-loadTexture :: FilePath -> IO (Either String Texture)
+loadTexture :: FilePath -> IO Texture
 loadTexture path =
-  JP.readImage path >>= either (return . Left) (texFromJPImg path)
+  JP.readImage path
+    >>= either error (texFromJPImg path)
+    >>= either error return
 
 texFromJPImg :: FilePath -> JP.DynamicImage -> IO (Either String Texture)
 texFromJPImg path dImg =
@@ -128,6 +96,7 @@ gpuLoadTexture :: (JP.Pixel p) => FilePath -> JP.Image p -> GL.PixelInternalForm
 gpuLoadTexture path (JP.Image w h dat) pixelInternalFormat pixelFormat datatype = do
   [tex] <- GL.genObjectNames 1
   GL.textureBinding GL.Texture2D $= Just tex
+  GL.textureFilter   GL.Texture2D      $= ((GL.Nearest, Nothing), GL.Nearest)
 
   V.unsafeWith dat $ \ptr ->
     GL.texImage2D

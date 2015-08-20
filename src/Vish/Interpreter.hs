@@ -16,7 +16,7 @@ import GXK.Data.App
 import GXK.Input
 import GXK.Window
 
-import Vish.Stage (Stage (..))
+import Vish.Stage (Stage (..), stageCenter, stageRight, stageLeft, stageBackground)
 import qualified Vish.Stage as Stage
 
 import qualified Vish.Graphics as Graphics
@@ -38,8 +38,6 @@ instance AppListener Interpreter where
     (winW, winH) <- appRef ^@ appWindow.windowSize
     appRef & appWorld . interpreterStage @%~ Stage.setSize (V2 winW winH)
 
-    loadScript appRef
-
   appUpdate appRef = do
     isWaiting <- appRef ^@ appWorld.interpreterWaiting
     unless isWaiting $ scriptUpdate appRef
@@ -52,9 +50,8 @@ instance AppListener Interpreter where
     Stage.draw stage
     Graphics.endDraw
 
-  appDispose appRef = do
-    texCache <- appRef ^@ appWorld.interpreterTexCache
-    Tex.scrubTexCache texCache
+  appDispose appRef =
+    return ()
 
   appPause _ =
     return ()
@@ -107,29 +104,23 @@ commandUpdate appRef command =
     S.ShowActors l r _ -> showActors appRef l r
     _ -> print command
 
-loadScript :: AppRef Interpreter -> IO ()
-loadScript appRef = do
-  texCache <- appRef ^@ appWorld.interpreterTexCache
-  commands <- appRef ^@ appWorld.interpreterCommands
-  initScript texCache $ Z.toList commands
-
 setBackground :: AppRef Interpreter -> Name -> IO ()
 setBackground appRef name = do
-  texCache <- appRef ^@ appWorld.interpreterTexCache
-  eitherBgTex <- Tex.fetchTexture texCache name
-  case eitherBgTex of
-    Left msg -> print msg
-    Right bgTex ->
-      let bgImg = Img.mkImage bgTex
-      in appRef & appWorld.interpreterStage @%~ Stage.setBackground bgImg
+  appRef & appWorld.interpreterStage.stageBackground @%= Img.delete
+  texBgPath <- findBgFile name
+  bgImg <- liftM Img.mkImage $ Tex.loadTexture texBgPath
+  appRef & appWorld.interpreterStage @%~ Stage.setBackground bgImg
 
 
 showCenterActor :: AppRef Interpreter -> Actor -> IO ()
-showCenterActor appRef actor =
+showCenterActor appRef actor = do
+  appRef & appWorld.interpreterStage.stageLeft @%= Img.delete
+  appRef & appWorld.interpreterStage.stageRight @%= Img.delete
   showActor appRef actor Stage.setCenter
 
 showActors :: AppRef Interpreter -> Actor -> Actor -> IO ()
 showActors appRef actorL actorR = do
+  appRef & appWorld.interpreterStage.stageCenter @%= Img.delete
   showLeftActor appRef actorL
   showRightActor appRef actorR
 
@@ -143,13 +134,9 @@ showRightActor appRef actor =
 
 showActor :: AppRef Interpreter -> Actor -> (Image -> Stage -> Stage) -> IO ()
 showActor appRef actor stageSetter= do
-  texCache <- appRef ^@ appWorld.interpreterTexCache
-  eitherActorTex <- Tex.fetchTexture texCache $ S.actorTag actor
-  case eitherActorTex of
-    Left msg -> print msg
-    Right actorTex ->
-      let actorImg = Img.mkImage actorTex
-      in appRef & appWorld.interpreterStage @%~ stageSetter actorImg
+  actorTexPath <- findActorFile actor
+  actorImg <- liftM Img.mkImage $ Tex.loadTexture actorTexPath
+  appRef & appWorld.interpreterStage @%~ stageSetter actorImg
 
 actorSpeak :: AppRef Interpreter -> Name -> String -> IO ()
 actorSpeak appRef name msg = do

@@ -19,7 +19,9 @@ startDraw = do
   GL.clear [GL.ColorBuffer]
 
 endDraw :: IO ()
-endDraw = return ()
+endDraw = do
+  GL.flush
+  GL.finish
 
 resize :: V2 Int -> IO ()
 resize size = do
