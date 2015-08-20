@@ -41,6 +41,7 @@ library
                       , Rasterific ==0.6
                       , regex-tdfa >= 1.2 && < 2
                       , text >= 1.2 && < 1.3
+                      , unordered-containers >= 0.2 && < 0.3
                       , vector >0.10 && < 1
                       , yaml >= 0.8 && < 1
 
@@ -56,34 +57,36 @@ library
 
   ghc-options:        -Wall
                       -fwarn-tabs
-                      -fno-warn-unused-binds
-                      -fno-warn-unused-do-bind
-                      -fno-warn-unused-imports
-                      -fno-warn-type-defaults
 
   hs-source-dirs:     src
 
   exposed-modules:    Vish
-                      Vish.Data.Game
-                      Vish.Game
-                      Vish.Data.GameConfig
-                      Vish.GameConfig
-                      Vish.Script
-                      Vish.Layout
-                      Vish.Data.Stage
-                      Vish.Stage
+                      Vish.Config
+                      Vish.Data.Config
+                      Vish.Data.Interpreter
                       Vish.Data.MessageBox
-                      Vish.MessageBox
-                      Vish.Interpreter
+                      Vish.Data.MessageBoxSkin
+                      Vish.Data.Resource
+                      Vish.Data.Script
+                      Vish.Data.Stage
                       Vish.Graphics
                       Vish.Graphics.Data.Color
-                      Vish.Graphics.Image
-                      Vish.Graphics.Data.Image
-                      Vish.Graphics.Font
                       Vish.Graphics.Data.Font
-                      Vish.Graphics.Texture
+                      Vish.Graphics.Data.Image
                       Vish.Graphics.Data.Texture
+                      Vish.Graphics.Data.TextureAtlas
+                      Vish.Graphics.Font
+                      Vish.Graphics.Image
+                      Vish.Graphics.Texture
+                      Vish.Graphics.TextureAtlas
                       Vish.Graphics.Util
+                      Vish.Interpreter
+                      Vish.Layout
+                      Vish.MessageBox
+                      Vish.MessageBoxSkin
+                      Vish.Resource
+                      Vish.Script
+                      Vish.Stage
 
 executable TestGame
   main-is:            TestGame.hs

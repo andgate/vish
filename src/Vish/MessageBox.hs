@@ -8,17 +8,11 @@ import Vish.Data.MessageBox
 
 import qualified Vish.Layout as LO
 
-import qualified Vish.Graphics.Data.Color as C
-
-import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
-
-import Vish.Graphics.Font (Font)
 import qualified Vish.Graphics.Font as Font
 
 import Linear.V2 (V2 (..))
 import qualified Linear.V2 as Vec
-import qualified Linear.Vector as Vec
 
 import Control.Lens
 
@@ -33,6 +27,7 @@ resize stgSize msgBox = do
                        . (msgBoxPosition .~ pos)
                        . (msgBoxFontStyle . Font.pixelSize .~ fontSize)
   setMessage content msgBox'
+
 
 setMessage :: String -> MessageBox -> IO MessageBox
 setMessage [] msgBox =

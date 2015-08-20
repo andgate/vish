@@ -8,7 +8,7 @@ import Vish.Data.Stage
 
 import qualified Vish.Layout as LO
 
-import Vish.MessageBox (MessageBox, msgBoxPosition, msgBoxSize, msgBoxBg, msgBoxImg)
+import Vish.MessageBox (MessageBox, msgBoxBg, msgBoxImg)
 import qualified Vish.MessageBox as MsgBox
 
 import Vish.Graphics.Image (Image (..))
@@ -17,13 +17,8 @@ import Vish.Graphics.Texture (Texture (..))
 
 import Linear.V2 (V2 (..))
 import qualified Linear.V2 as Vec
-import qualified Linear.Vector as Vec
 
 import Control.Lens
-import Control.Arrow
-import Control.Monad
-
-import System.IO.Unsafe
 
 draw :: Stage -> IO ()
 draw stg = do
@@ -84,7 +79,7 @@ setBackground :: Image -> Stage -> Stage
 setBackground Blank stg = stg
 setBackground img stg =
   let maxSize = fromIntegral <$> stg ^. stageSize
-      elemSize = texSize $ imageTexture img
+      elemSize = textureSize $ imageTexture img
 
       tex = imageTexture img
       elemSize' = LO.calcFillCropSize maxSize elemSize
@@ -104,7 +99,7 @@ setLeft Blank stg = stg
 setLeft img stg =
   let maxSize = fromIntegral <$> stg ^. stageSize
       halfMaxSize = maxSize & Vec._x //~ 2
-      elemSize = texSize $ imageTexture img
+      elemSize = textureSize $ imageTexture img
 
       tex = imageTexture img
       elemSize' = LO.calcFitSize halfMaxSize elemSize
@@ -119,7 +114,7 @@ setRight Blank stg = stg
 setRight img stg =
   let maxSize = fromIntegral <$> stg ^. stageSize
       halfMaxSize = maxSize & Vec._x //~ 2
-      elemSize = texSize $ imageTexture img
+      elemSize = textureSize $ imageTexture img
 
       tex = imageTexture img
       elemSize' = LO.calcFitSize halfMaxSize elemSize
@@ -134,7 +129,7 @@ setCenter :: Image -> Stage -> Stage
 setCenter Blank stg = stg
 setCenter img stg =
   let maxSize = fromIntegral <$> stg ^. stageSize
-      elemSize = texSize $ imageTexture img
+      elemSize = textureSize $ imageTexture img
 
       tex = imageTexture img
       elemSize' = LO.calcFitSize maxSize elemSize

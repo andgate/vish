@@ -1,10 +1,9 @@
 module Vish.Graphics where
 
-import Graphics.Rendering.OpenGL (get, ($=))
+import Graphics.Rendering.OpenGL (($=))
 import qualified Graphics.Rendering.OpenGL as GL
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
 
 init :: IO ()
 init = do

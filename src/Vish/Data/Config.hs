@@ -1,21 +1,19 @@
-module Vish.Data.GameConfig where
+module Vish.Data.Config where
 
 import Control.Applicative
 import Data.Yaml
 import System.FilePath
 
 
-data GameConfig =
-  GameConfig
+data Config =
+  Config
     { gameConfigFontName :: String
+    , gameConfigSkinName :: String
     }
 
-gameConfigFile :: FilePath
-gameConfigFile = "data" </> "game.yaml"
-
-instance FromJSON GameConfig where
+instance FromJSON Config where
     parseJSON (Object v) =
-      GameConfig <$>
-        v .: "font"
+      Config <$> v .: "font"
+             <*> v .: "skin"
     -- A non-Object value is of the wrong type, so fail.
     parseJSON _ = empty

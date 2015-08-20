@@ -1,30 +1,30 @@
-module Vish.GameConfig
-  ( module Vish.GameConfig
-  , module Vish.Data.GameConfig
+module Vish.Config
+  ( module Vish.Config
+  , module Vish.Data.Config
   )
 where
 
-import Vish.Data.GameConfig
-import Vish.Data.Game
-
+import Vish.Data.Config
+import Vish.Interpreter
 import Vish.Script
+import Vish.Data.Resource
 
 import qualified Vish.Graphics.Font as Font
 
 import Data.Yaml
 import System.FilePath
 
-load :: IO GameConfig
+load :: IO Config
 load = loadFile gameConfigFile
 
-loadFile :: String -> IO GameConfig
+loadFile :: FilePath -> IO Config
 loadFile path = do
   eitherAppConfig <- decodeFileEither path
   return $ either (error . show) id eitherAppConfig
 
-toGame :: Script -> GameConfig -> IO GameWorld
-toGame script gameCfg = do
+toInterpreter :: Script -> Config -> IO Interpreter
+toInterpreter script gameCfg = do
   let fntName = gameConfigFontName gameCfg
       fntPath = "data/font/" ++ fntName ++ ".ttf"
   fnt <- Font.load fntPath
-  mkGameWorld script fnt
+  mkInterpreter script fnt

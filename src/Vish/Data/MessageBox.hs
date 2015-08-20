@@ -9,7 +9,6 @@ import Vish.Graphics.Font (Font)
 import qualified Vish.Graphics.Font as Font
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
 import qualified Linear.Vector as Vec
 
 import Control.Lens

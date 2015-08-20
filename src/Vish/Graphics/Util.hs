@@ -5,7 +5,6 @@ import qualified Graphics.Rendering.OpenGL.GL as GL
 import Graphics.Rendering.OpenGL.GL (($=))
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
 
 gf :: Float -> GL.GLfloat
 gf = unsafeCoerce

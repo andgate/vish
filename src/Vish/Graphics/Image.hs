@@ -13,7 +13,6 @@ import qualified Vish.Graphics.Util as Util
 import Control.Monad
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
 import qualified Linear.Vector as Vec
 
 mkImage :: Texture -> Image
@@ -23,7 +22,7 @@ mkImage tex =
 
 mkImageXY :: Texture -> V2 Float -> Image
 mkImageXY tex pos =
-  let size = texSize tex
+  let size = textureSize tex
   in mkImageXYWH tex pos size
 
 mkImageXYWH :: Texture -> V2 Float -> V2 Float -> Image

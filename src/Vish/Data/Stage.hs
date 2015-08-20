@@ -1,13 +1,11 @@
 module Vish.Data.Stage where
 
 import Vish.MessageBox (MessageBox, mkMsgBox)
-import qualified Vish.MessageBox as MsgBox
 
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
 import qualified Linear.Vector as Vec
 
 import Vish.Graphics.Font (Font)

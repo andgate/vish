@@ -13,10 +13,7 @@ import qualified Vish.Graphics.Data.Color as C
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 
-import Vish.Graphics.Texture (Texture (..))
 import qualified Vish.Graphics.Texture as Tex
-
-import Vish.Graphics.Util
 
 import Control.Monad
 
@@ -29,13 +26,9 @@ import qualified Graphics.Rasterific as R
 import qualified Graphics.Rasterific.Texture as R
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
-import Graphics.Rendering.OpenGL.GL (($=), get)
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
 import qualified Linear.Vector as Vec
-
-import System.FilePath
 
 load :: FilePath -> IO Font
 load = liftM (either error id) . Font.loadFontFile
@@ -53,7 +46,7 @@ printToImageXY (Style fnt (C.Color r g b a) spx)
   = do
   let dpi = 200
       spt = Font.pixelSizeInPointAtDpi spx dpi
-      (BoundingBox x1 y1 x2 y2 blH) =
+      (BoundingBox x1 y1 x2 y2 _) =
         Font.stringBoundingBox fnt dpi spt str
       imgW = ceiling $ x2 - x1
       imgH = ceiling $ y2 - y1

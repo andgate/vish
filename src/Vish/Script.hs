@@ -1,46 +1,23 @@
-{-# LANGUAGE DeriveFunctor #-}
+module Vish.Script
+  ( module Vish.Script
+  , module Vish.Data.Script
+  )
+where
 
-module Vish.Script where
+import Vish.Data.Script
 
 import Data.Maybe
-import Data.Functor
 import Control.Applicative
 import Data.List as List
-import qualified Data.HashTable.IO as H
 import Control.Monad.Free
 import qualified Data.Text as T
 import qualified Data.Attoparsec.Text as P
-
+import qualified Data.HashTable.IO as H
 import qualified Data.Set as S
 import qualified Data.List.Zipper as Z
 
+
 type Flags = H.BasicHashTable String Bool
-type Background = String
-type Name = String
-type Expression = String
-
-type Actor = (Name, Expression)
-
-type ScriptCommand = Command ()
-
-type Script = Free Command ()
-
-data Command next =
-  Done
-  | ShowActor Actor next
-  | ShowActors Actor Actor next
-  | HideActors next
-  | Pause Double next
-  | SetBackground Background next
-  | Speak Name String next
-  | SetScene Scene next
-  | SetFlag String Bool next
-  | IfFlag String Script next
-  | IfNoFlag String Script next
-  deriving(Functor, Show)
-
-data Scene = Scene Name Script
-  deriving Show
 
 showActor :: Name -> Expression -> Script
 showActor c e = liftF $ ShowActor (c, e) ()

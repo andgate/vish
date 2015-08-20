@@ -12,10 +12,8 @@ import qualified Codec.Picture as JP
 import qualified Codec.Picture.Types as JP
 import qualified Data.HashTable.IO as H
 import qualified Data.Vector.Storable as V
-import System.FilePath
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
 import qualified Linear.Vector as Vec
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
@@ -63,8 +61,8 @@ drawTex tex =
 
 drawTexXY :: Texture -> V2 Float -> IO ()
 drawTexXY tex pos =
-  let size = texSize tex
-  in drawTexXYWH tex pos size
+  let texSize = textureSize tex
+  in drawTexXYWH tex pos texSize
 
 drawTexXYWH :: Texture -> V2 Float -> V2 Float -> IO ()
 drawTexXYWH tex (V2 x y) (V2 w h) = do
@@ -80,7 +78,7 @@ drawTexXYWH tex (V2 x y) (V2 w h) = do
   GL.textureFunction      $= GL.Combine
 
   -- Set current texture
-  GL.textureBinding GL.Texture2D $= Just (texObject tex)
+  GL.textureBinding GL.Texture2D $= Just (textureObject tex)
 
   oldColor <- get GL.currentColor
   GL.currentColor $= GL.Color4 1.0 1.0 1.0 1.0
@@ -103,7 +101,7 @@ drawTexXYWH tex (V2 x y) (V2 w h) = do
       [(x, y), (x+w, y), (x+w, y+h), (x,y+h)]
 
 unloadTexture :: Texture -> IO ()
-unloadTexture tex = GL.deleteObjectName $ texObject tex
+unloadTexture tex = GL.deleteObjectName $ textureObject tex
 
 loadTexture :: FilePath -> IO (Either String Texture)
 loadTexture path =
@@ -142,7 +140,7 @@ gpuLoadTexture path (JP.Image w h dat) pixelInternalFormat pixelFormat datatype 
       (GL.PixelData pixelFormat datatype ptr)
 
   return Texture
-    { texPath = path
-    , texSize =  fromIntegral <$> V2 w h
-    , texObject = tex
+    { texturePath = path
+    , textureSize =  fromIntegral <$> V2 w h
+    , textureObject = tex
     }

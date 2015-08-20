@@ -1,8 +1,6 @@
 module Vish.Layout where
 
 import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec
-import qualified Linear.Vector as Vec
 
 calcFitSize :: V2 Float -> V2 Float -> V2 Float
 calcFitSize (V2 maxW maxH) elemSize =
@@ -11,14 +9,15 @@ calcFitSize (V2 maxW maxH) elemSize =
     else calcSizeByWidth maxW elemSize
 
 calcFillCropSize :: V2 Float -> V2 Float -> V2 Float
-calcFillCropSize (V2 maxW maxH) (V2 elemW elemH) =
-  if maxW > maxH
-    then if maxH > elemH'
-      then V2 elemW' maxH
-      else V2 maxW elemH'
-    else if maxW > elemW'
-      then V2 maxW elemH'
-      else V2 elemW' maxH
+calcFillCropSize (V2 maxW maxH) (V2 elemW elemH)
+  | maxW > maxH =
+      if maxH > elemH'
+        then V2 elemW' maxH
+        else V2 maxW elemH'
+  | otherwise =
+      if maxW > elemW'
+        then V2 maxW elemH'
+        else V2 elemW' maxH
 
   where
     res = elemW / elemH

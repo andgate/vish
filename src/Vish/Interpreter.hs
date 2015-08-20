@@ -1,75 +1,162 @@
-{-# LANGUAGE LambdaCase #-}
+module Vish.Interpreter
+  ( module Vish.Interpreter
+  , module Vish.Data.Interpreter
+  )
+where
 
-module Vish.Interpreter where
+import Vish.Data.Interpreter
 
-import Vish.Script
+import Vish.Script (Script, ScriptCommand, Name, Actor)
+import qualified Vish.Script as S
 
-import Vish.Graphics.Data.Texture
-import Vish.Graphics.Texture
+import Vish.Resource
 
-import Data.Maybe
-import Data.List
-import System.Directory
-import System.FilePath
-import Text.Regex.TDFA
+import GXK.App
+import GXK.Data.App
+import GXK.Input
+import GXK.Window
 
-actorDirectory :: Name -> FilePath
-actorDirectory name =
-  "data" </> "actor" </> name
+import Vish.Stage (Stage (..))
+import qualified Vish.Stage as Stage
 
-actorRegex :: Name -> Expression -> String
-actorRegex _ expr =
-  expr <.> "*"
+import qualified Vish.Graphics as Graphics
+import Vish.Graphics.Image (Image (..))
+import qualified Vish.Graphics.Image as Img
+import qualified Vish.Graphics.Texture as Tex
 
-bgDirectory :: FilePath
-bgDirectory =
-  "data" </> "background"
+import Control.Lens
+import GXK.Data.IORef.Lens
+import Control.Monad
+import qualified Data.List.Zipper as Z
 
-bgRegex :: Name -> String
-bgRegex name =
-  name <.> "*"
+import Linear.V2 (V2 (..))
 
-findActorFile :: Actor -> IO FilePath
-findActorFile (name, expr) = do
-  contents <- getDirectoryContents $ actorDirectory name
-  let matches = mapMaybe (=~~ actorRegex name expr) contents
-  case matches of
-    []  -> error $ "No image found for " ++ name ++ " with expression " ++ expr
-                    ++ "\nPath regex: " ++ actorRegex name expr
-                    ++ "\nFiles found: " ++ (intercalate ", ") contents
-    [x] -> return $ actorDirectory name </> x
-    xs -> error $ "File conflicts for " ++ name ++ " with expression " ++ expr ++ ": " ++ show xs
+instance AppListener Interpreter where
+  appCreate appRef = do
+    Graphics.init
 
-findBgFile :: Name -> IO FilePath
-findBgFile name = do
-  contents <- getDirectoryContents bgDirectory
-  let matches = mapMaybe (=~~ bgRegex name) contents
-  case matches of
-    []  -> error $ "No image found for background " ++ name
-    [x] -> return $ bgDirectory </> x
-    xs -> error $ "File conflicts for background " ++ name ++ ": " ++ show xs
+    (winW, winH) <- appRef ^@ appWindow.windowSize
+    appRef & appWorld . interpreterStage @%~ Stage.setSize (V2 winW winH)
 
-installActorTexture :: TexCache -> Actor -> IO ()
-installActorTexture texCache actor = do
-  let tag = actorTag actor
-  path <- findActorFile actor
-  installTexture texCache path tag
+    loadScript appRef
 
-installScriptActors :: TexCache -> [ScriptCommand] -> IO ()
-installScriptActors texCache =
-  mapM_ (installActorTexture texCache) . getActors
+  appUpdate appRef = do
+    isWaiting <- appRef ^@ appWorld.interpreterWaiting
+    unless isWaiting $ scriptUpdate appRef
+    registerInputListener appRef $ InterpreterInput appRef
 
-installBgTexture :: TexCache -> Background -> IO ()
-installBgTexture texCache name = do
-  path <- findBgFile name
-  installTexture texCache path name
+  appDraw appRef = do
+    stage <- appRef ^@ appWorld.interpreterStage
 
-installScriptBgs :: TexCache -> [ScriptCommand] -> IO ()
-installScriptBgs texCache =
-  mapM_ (installBgTexture texCache) . getBgs
+    Graphics.startDraw
+    Stage.draw stage
+    Graphics.endDraw
 
-initScript :: TexCache -> [ScriptCommand] -> IO ()
-initScript texCache commands = do
-  scrubTexCache texCache -- Needs to be clean for new script
-  installScriptBgs texCache commands
-  installScriptActors texCache commands
+  appDispose appRef = do
+    texCache <- appRef ^@ appWorld.interpreterTexCache
+    Tex.scrubTexCache texCache
+
+  appPause _ =
+    return ()
+
+  appResume _ =
+    return ()
+
+  appResize appRef (winW, winH) = do
+    let s = V2 winW winH
+
+    Graphics.resize s
+
+    appRef & appWorld.interpreterStage @%= Stage.resize s
+
+
+instance InputListener InterpreterInput where
+  mouseClicked (InterpreterInput appRef) _ _ =
+    appRef & appWorld.interpreterWaiting @~ False
+  keyReleased (InterpreterInput appRef) Key'Enter =
+    appRef & appWorld.interpreterWaiting @~ False
+  keyReleased (InterpreterInput appRef) Key'Space =
+    appRef & appWorld.interpreterWaiting @~ False
+  keyReleased (InterpreterInput appRef) Key'F11 =
+    appRef & appWorld.interpreterWaiting @~ False
+  keyReleased (InterpreterInput appRef) Key'Escape =
+      quitApp appRef
+  keyReleased _ _ = return ()
+
+scriptUpdate :: AppRef Interpreter -> IO ()
+scriptUpdate appRef = do
+  commands <- appRef ^@ appWorld.interpreterCommands
+  let commands' = Z.right commands
+      maybeCommand = Z.safeCursor commands
+
+  -- Save the freshly moved zipper
+  appRef & appWorld.interpreterCommands @~ commands'
+
+  case maybeCommand of
+    Nothing -> quitApp appRef
+    Just command -> commandUpdate appRef command
+
+commandUpdate :: AppRef Interpreter -> ScriptCommand -> IO ()
+commandUpdate appRef command =
+  case command of
+    S.Done -> quitApp appRef
+    S.SetBackground name _ -> setBackground appRef name
+    S.Pause t _ -> appDelay t
+    S.Speak a m _ -> actorSpeak appRef a m
+    S.ShowActor c _ -> showCenterActor appRef c
+    S.ShowActors l r _ -> showActors appRef l r
+    _ -> print command
+
+loadScript :: AppRef Interpreter -> IO ()
+loadScript appRef = do
+  texCache <- appRef ^@ appWorld.interpreterTexCache
+  commands <- appRef ^@ appWorld.interpreterCommands
+  initScript texCache $ Z.toList commands
+
+setBackground :: AppRef Interpreter -> Name -> IO ()
+setBackground appRef name = do
+  texCache <- appRef ^@ appWorld.interpreterTexCache
+  eitherBgTex <- Tex.fetchTexture texCache name
+  case eitherBgTex of
+    Left msg -> print msg
+    Right bgTex ->
+      let bgImg = Img.mkImage bgTex
+      in appRef & appWorld.interpreterStage @%~ Stage.setBackground bgImg
+
+
+showCenterActor :: AppRef Interpreter -> Actor -> IO ()
+showCenterActor appRef actor =
+  showActor appRef actor Stage.setCenter
+
+showActors :: AppRef Interpreter -> Actor -> Actor -> IO ()
+showActors appRef actorL actorR = do
+  showLeftActor appRef actorL
+  showRightActor appRef actorR
+
+showLeftActor :: AppRef Interpreter -> Actor -> IO ()
+showLeftActor appRef actor =
+  showActor appRef actor Stage.setLeft
+
+showRightActor :: AppRef Interpreter -> Actor -> IO ()
+showRightActor appRef actor =
+  showActor appRef actor Stage.setRight
+
+showActor :: AppRef Interpreter -> Actor -> (Image -> Stage -> Stage) -> IO ()
+showActor appRef actor stageSetter= do
+  texCache <- appRef ^@ appWorld.interpreterTexCache
+  eitherActorTex <- Tex.fetchTexture texCache $ S.actorTag actor
+  case eitherActorTex of
+    Left msg -> print msg
+    Right actorTex ->
+      let actorImg = Img.mkImage actorTex
+      in appRef & appWorld.interpreterStage @%~ stageSetter actorImg
+
+actorSpeak :: AppRef Interpreter -> Name -> String -> IO ()
+actorSpeak appRef name msg = do
+  appRef & appWorld.interpreterWaiting @~ True
+  setMessage appRef msg
+
+setMessage :: AppRef Interpreter -> String -> IO ()
+setMessage appRef msg = do
+  appRef & appWorld.interpreterStage @%= Stage.clearMessage
+  appRef & appWorld.interpreterStage @%= Stage.setMessage msg
