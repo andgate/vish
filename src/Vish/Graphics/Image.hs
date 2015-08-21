@@ -6,38 +6,21 @@ where
 
 import Vish.Graphics.Data.Image
 
-import Vish.Graphics.Texture (Texture (..))
+import Vish.Graphics.Texture (Texture)
 import qualified Vish.Graphics.Texture as Tex
 import qualified Vish.Graphics.Util as Util
 
+import Control.Lens
 import Control.Monad
 
 import Linear.V2 (V2 (..))
 import qualified Linear.Vector as Vec
 
-mkImage :: Texture -> Image
-mkImage tex =
-  let pos = Vec.zero
-  in mkImageXY tex pos
-
-mkImageXY :: Texture -> V2 Float -> Image
-mkImageXY tex pos =
-  let size = textureSize tex
-  in mkImageXYWH tex pos size
-
-mkImageXYWH :: Texture -> V2 Float -> V2 Float -> Image
-mkImageXYWH tex pos size=
-  Image
-    { imageTexture = tex
-    , imagePosition = pos
-    , imageSize = size
-    }
 
 drawAll :: V2 Int -> [Image] -> IO ()
 drawAll scrnSize imgs =
   Util.withModelview scrnSize $
     forM_ imgs drawInView
-
 
 draw :: V2 Int -> Image -> IO ()
 draw scrnSize img =
@@ -45,16 +28,51 @@ draw scrnSize img =
     drawInView img
 
 drawInView :: Image -> IO ()
-drawInView img =
-  case img of
-    Blank -> return ()
-    Image tex pos size ->
-      Tex.drawTexXYWH tex pos size
+drawInView (Image tex pos meas) =
+  Tex.drawTexXYWH tex pos meas
 
 
-delete :: Image -> IO Image
-delete Blank =
-  return Blank
-delete img = do
-  Tex.unloadTexture . imageTexture $ img
-  return Blank
+load :: FilePath -- ^ Image file path
+     -> IO Image
+load fp =
+  liftM mkImage $ Tex.load fp
+
+loadXY :: V2 Float -- ^ Image position
+       -> FilePath -- ^ Image file path
+       -> IO Image
+loadXY p fp =
+  liftM (mkImageXY p) $ Tex.load fp
+
+loadXYWH :: V2 Float -- ^ Image position
+         -> V2 Float -- ^ Image size
+         -> FilePath -- ^ Image file path
+         -> IO Image
+loadXYWH p s fp =
+  liftM (mkImageXYWH p s) $ Tex.load fp
+
+unload :: Image -> IO ()
+unload i =
+  Tex.unload (i^.texture)
+
+mkImage :: Texture -- ^ Image texture
+        -> Image
+mkImage t =
+  let p = Vec.zero
+  in mkImageXY p t
+
+mkImageXY :: V2 Float -- ^ Image position
+          -> Texture  -- ^ Image texture
+          -> Image
+mkImageXY p t =
+  mkImageXYWH p (t^.Tex.srcSize) t
+
+mkImageXYWH :: V2 Float -- ^ Image position
+            -> V2 Float -- ^ Image measurements
+            -> Texture  -- ^ Image texture
+            -> Image
+mkImageXYWH p s t =
+  Image
+    { _texture  = t
+    , _position = p
+    , _size  = s
+    }

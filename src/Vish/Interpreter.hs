@@ -106,37 +106,33 @@ commandUpdate appRef command =
 
 setBackground :: AppRef Interpreter -> Name -> IO ()
 setBackground appRef name = do
-  appRef & appWorld.interpreterStage.stageBackground @%= Img.delete
+  appRef & appWorld.interpreterStage @%= Stage.clearBackground
   texBgPath <- findBgFile name
-  bgImg <- liftM Img.mkImage $ Tex.loadTexture texBgPath
-  appRef & appWorld.interpreterStage @%~ Stage.setBackground bgImg
+  bgImg <- liftM Img.mkImage $ Tex.load texBgPath
+  appRef & appWorld.interpreterStage @%= Stage.setBackground bgImg
 
 
 showCenterActor :: AppRef Interpreter -> Actor -> IO ()
 showCenterActor appRef actor = do
-  appRef & appWorld.interpreterStage.stageLeft @%= Img.delete
-  appRef & appWorld.interpreterStage.stageRight @%= Img.delete
+  clearActors appRef
   showActor appRef actor Stage.setCenter
 
 showActors :: AppRef Interpreter -> Actor -> Actor -> IO ()
 showActors appRef actorL actorR = do
-  appRef & appWorld.interpreterStage.stageCenter @%= Img.delete
-  showLeftActor appRef actorL
-  showRightActor appRef actorR
+  clearActors appRef
+  showActor appRef actorL Stage.setLeft
+  showActor appRef actorR Stage.setRight
 
-showLeftActor :: AppRef Interpreter -> Actor -> IO ()
-showLeftActor appRef actor =
-  showActor appRef actor Stage.setLeft
-
-showRightActor :: AppRef Interpreter -> Actor -> IO ()
-showRightActor appRef actor =
-  showActor appRef actor Stage.setRight
-
-showActor :: AppRef Interpreter -> Actor -> (Image -> Stage -> Stage) -> IO ()
+showActor :: AppRef Interpreter -> Actor -> (Image -> Stage -> IO Stage) -> IO ()
 showActor appRef actor stageSetter= do
   actorTexPath <- findActorFile actor
-  actorImg <- liftM Img.mkImage $ Tex.loadTexture actorTexPath
-  appRef & appWorld.interpreterStage @%~ stageSetter actorImg
+  actorImg <- liftM Img.mkImage $ Tex.load actorTexPath
+  appRef & appWorld.interpreterStage @%= stageSetter actorImg
+
+clearActors :: AppRef Interpreter -> IO ()
+clearActors appRef = do
+  appRef & appWorld.interpreterStage @%= Stage.clearActors
+
 
 actorSpeak :: AppRef Interpreter -> Name -> String -> IO ()
 actorSpeak appRef name msg = do

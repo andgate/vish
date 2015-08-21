@@ -13,23 +13,25 @@ import Vish.Graphics.Font (Font)
 import Control.Lens
 
 data Stage = Stage
-  { _stageSize :: V2 Int
-  , _stageBackground :: Image
-  , _stageLeft :: Image
-  , _stageCenter :: Image
-  , _stageRight :: Image
-  , _stageMsgBox :: MessageBox
+  { _stageSize        :: V2 Int
+  , _stageBackground  :: Image
+  , _stageLeft        :: Image
+  , _stageCenter      :: Image
+  , _stageRight       :: Image
+  , _stageMsgBox      :: MessageBox
   }
 
-mkStage :: Font -> Stage
-mkStage fnt =
- Stage
-   { _stageSize = Vec.zero
-   , _stageBackground = Img.Blank
-   , _stageLeft = Img.Blank
-   , _stageCenter = Img.Blank
-   , _stageRight = Img.Blank
-   , _stageMsgBox = mkMsgBox fnt
-   }
+mkStage :: Font -> IO Stage
+mkStage fnt = do
+  blankImg  <- Img.blank
+  msgBox    <- mkMsgBox fnt
+  return $ Stage
+    { _stageSize        = Vec.zero
+    , _stageBackground  = blankImg
+    , _stageLeft        = blankImg
+    , _stageCenter      = blankImg
+    , _stageRight       = blankImg
+    , _stageMsgBox      = msgBox
+    }
 
 makeLenses ''Stage

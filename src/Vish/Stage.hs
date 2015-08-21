@@ -13,12 +13,14 @@ import qualified Vish.MessageBox as MsgBox
 
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
-import Vish.Graphics.Texture (Texture (..))
+import Vish.Graphics.Texture (Texture)
+import qualified Vish.Graphics.Texture as Tex
 
 import Linear.V2 (V2 (..))
 import qualified Linear.V2 as Vec
 
 import Control.Lens
+import Control.Monad
 
 draw :: Stage -> IO ()
 draw stg = do
@@ -42,17 +44,17 @@ resize scrnSize stg = do
       rImg    = stg ^. stageRight
       cntrImg = stg ^. stageCenter
       msgBox = stg ^. stageMsgBox
-      stg' =
-        setBackground bgImg
-          . setLeft lImg
-          . setRight rImg
-          . setCenter cntrImg
-          . setSize scrnSize
+  stg' <- setBackground bgImg
+       <=< setLeft lImg
+       <=< setRight rImg
+       <=< setCenter cntrImg
+       .   setSize scrnSize
           $ stg
   setMsgBox msgBox stg'
 
 setSize :: V2 Int -> Stage -> Stage
 setSize = (stageSize .~)
+
 
 setMsgBox :: MessageBox -> Stage -> IO Stage
 setMsgBox msgBox stg = do
@@ -68,74 +70,76 @@ setMessage msg stg = do
 
 clearMessage :: Stage -> IO Stage
 clearMessage stg = do
-  msgBoxBg'  <- Img.delete (stg ^. stageMsgBox . msgBoxBg)
-  msgBoxImg' <- Img.delete (stg ^. stageMsgBox . msgBoxImg)
+  Img.unload (stg ^. stageMsgBox . msgBoxBg)
+  Img.unload (stg ^. stageMsgBox . msgBoxImg)
+  blankImg   <- Img.blank
   stg & return
-      . (stageMsgBox . msgBoxBg .~ msgBoxBg')
-      . (stageMsgBox . msgBoxImg .~ msgBoxImg')
+      . (stageMsgBox . msgBoxBg .~ blankImg)
+      . (stageMsgBox . msgBoxImg .~ blankImg)
 
 
-setBackground :: Image -> Stage -> Stage
-setBackground Blank stg = stg
-setBackground img stg =
-  let maxSize = fromIntegral <$> stg ^. stageSize
-      elemSize = textureSize $ imageTexture img
+setBackground :: Image -> Stage -> IO Stage
+setBackground img stg =  do
+  let maxMeas = fromIntegral <$> stg ^. stageSize
+      elemMeas = img ^. Img.texture . Tex.srcSize
 
-      tex = imageTexture img
-      elemSize' = LO.calcFillCropSize maxSize elemSize
-      elemPos = LO.alignCenter maxSize elemSize'
+      elemMeas' = LO.calcFillCropSize maxMeas elemMeas
+      elemPos = LO.alignCenter maxMeas elemMeas'
+      img' = img & (Img.position .~ elemPos)
+                 . (Img.size .~ elemMeas')
+  stg & return . (stageBackground .~ img')
 
-      img' = Img.mkImageXYWH tex elemPos elemSize'
-  in stg & stageBackground .~ img'
-
-clearBg :: Stage -> IO Stage
-clearBg stg = do
-  bg' <- Img.delete (stg ^. stageBackground)
+clearBackground :: Stage -> IO Stage
+clearBackground stg = do
+  Img.unload (stg ^. stageBackground)
+  blankImg   <- Img.blank
   stg & return
-      . (stageBackground .~ bg')
+      . (stageBackground .~ blankImg)
 
-setLeft :: Image -> Stage -> Stage
-setLeft Blank stg = stg
-setLeft img stg =
-  let maxSize = fromIntegral <$> stg ^. stageSize
-      halfMaxSize = maxSize & Vec._x //~ 2
-      elemSize = textureSize $ imageTexture img
 
-      tex = imageTexture img
-      elemSize' = LO.calcFitSize halfMaxSize elemSize
-      elemPos = LO.alignBottomCenter halfMaxSize elemSize'
+setLeft :: Image -> Stage -> IO Stage
+setLeft img stg = do
+  let maxMeas = fromIntegral <$> stg ^. stageSize
+      halfMaxMeas = maxMeas & Vec._x //~ 2
+      elemMeas = img ^. Img.texture . Tex.srcSize
 
-      img' = Img.mkImageXYWH tex elemPos elemSize'
-  in stg & (stageLeft .~ img')
-         . (stageCenter .~ Img.Blank)
+      elemMeas' = LO.calcFitSize halfMaxMeas elemMeas
+      elemPos = LO.alignBottomCenter halfMaxMeas elemMeas'
+      img' = img & (Img.position .~ elemPos)
+                 . (Img.size .~ elemMeas')
+  stg & return . (stageLeft .~ img')
 
-setRight :: Image -> Stage -> Stage
-setRight Blank stg = stg
-setRight img stg =
-  let maxSize = fromIntegral <$> stg ^. stageSize
-      halfMaxSize = maxSize & Vec._x //~ 2
-      elemSize = textureSize $ imageTexture img
+setRight :: Image -> Stage -> IO Stage
+setRight img stg = do
+  let maxMeas = fromIntegral <$> stg ^. stageSize
+      halfMaxMeas = maxMeas & Vec._x //~ 2
+      elemMeas = img ^. Img.texture . Tex.srcSize
 
-      tex = imageTexture img
-      elemSize' = LO.calcFitSize halfMaxSize elemSize
-      elemPos = LO.alignBottomCenter halfMaxSize elemSize'
-      elemPos' = elemPos & Vec._x +~ (halfMaxSize ^. Vec._x)
+      elemMeas' = LO.calcFitSize halfMaxMeas elemMeas
+      elemPos = LO.alignBottomCenter halfMaxMeas elemMeas'
+      elemPos' = elemPos & Vec._x +~ (halfMaxMeas ^. Vec._x)
+      img' = img & (Img.position .~ elemPos')
+                 . (Img.size .~ elemMeas')
+  stg & return . (stageRight .~ img')
 
-      img' = Img.mkImageXYWH tex elemPos' elemSize'
-  in stg & (stageRight .~ img')
-         . (stageCenter .~ Img.Blank)
+setCenter :: Image -> Stage -> IO Stage
+setCenter img stg = do
+  let maxMeas = fromIntegral <$> stg ^. stageSize
+      elemMeas = img ^. Img.texture . Tex.srcSize
 
-setCenter :: Image -> Stage -> Stage
-setCenter Blank stg = stg
-setCenter img stg =
-  let maxSize = fromIntegral <$> stg ^. stageSize
-      elemSize = textureSize $ imageTexture img
+      elemMeas' = LO.calcFitSize maxMeas elemMeas
+      elemPos = LO.alignBottomCenter maxMeas elemMeas'
+      img' = img & (Img.position .~ elemPos)
+                 . (Img.size .~ elemMeas')
+  stg & return . (stageCenter .~ img')
 
-      tex = imageTexture img
-      elemSize' = LO.calcFitSize maxSize elemSize
-      elemPos = LO.alignBottomCenter maxSize elemSize'
-
-      img' = Img.mkImageXYWH tex elemPos elemSize'
-  in stg & (stageCenter .~ img')
-         . (stageLeft .~ Img.Blank)
-         . (stageRight .~ Img.Blank)
+clearActors :: Stage -> IO Stage
+clearActors stg = do
+  Img.unload (stg ^. stageLeft)
+  Img.unload (stg ^. stageRight)
+  Img.unload (stg ^. stageCenter)
+  blankImg   <- Img.blank
+  stg & return
+      . (stageLeft .~ blankImg)
+      . (stageRight .~ blankImg)
+      . (stageCenter .~ blankImg)

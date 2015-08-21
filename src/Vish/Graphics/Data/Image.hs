@@ -1,13 +1,27 @@
 module Vish.Graphics.Data.Image where
 
-import Vish.Graphics.Data.Texture
+import Control.Lens
+
+import Vish.Graphics.Texture (Texture)
+import qualified Vish.Graphics.Texture as Tex
 
 import Linear.V2 (V2 (..))
+import qualified Linear.Vector as Vec
 
 data Image =
-  Blank
-  | Image
-    { imageTexture :: Texture
-    , imagePosition :: V2 Float
-    , imageSize :: V2 Float
+  Image
+    { _texture  :: Texture
+    , _position :: V2 Float
+    , _size     :: V2 Float
     }
+
+blank :: IO Image
+blank = do
+  blankTex <- Tex.blank
+  return $ Image
+    { _texture  = blankTex
+    , _position = Vec.zero
+    , _size     = Vec.zero
+    }
+
+makeLenses ''Image

@@ -40,9 +40,10 @@ printToImage style str =
 -- Needs to load the vertices to the
 -- for drawing later
 printToImageXY :: Style -> String -> V2 Float -> IO Image
-printToImageXY (Style fnt (C.Color r g b a) spx)
-             str
-             (V2 x y)
+printToImageXY
+    (Style fnt (C.Color r g b a) spx)
+    str
+    (V2 x y)
   = do
   let dpi = 200
       spt = Font.pixelSizeInPointAtDpi spx dpi
@@ -54,5 +55,5 @@ printToImageXY (Style fnt (C.Color r g b a) spx)
         R.renderDrawingAtDpi imgW imgH dpi (PixelRGBA8 255 255 255 0)
           . R.withTexture (R.uniformTexture $ PixelRGBA8 r g b a) $
             R.printTextAt fnt spt (R.V2 0 y2) str
-  tex <- Tex.gpuLoadTexture "" jpImg GL.RGBA8 GL.RGBA GL.UnsignedByte
-  return $ Img.mkImageXY tex (V2 x y)
+  tex <- Tex.sendToGpu "" jpImg GL.RGBA8 GL.RGBA GL.UnsignedByte
+  return $ Img.mkImageXY (V2 x y) tex

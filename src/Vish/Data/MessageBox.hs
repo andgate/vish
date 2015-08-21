@@ -23,13 +23,14 @@ data MessageBox =
   , _msgBoxFontStyle :: Font.Style
   }
 
-mkMsgBox :: Font -> MessageBox
-mkMsgBox fnt =
-  MessageBox
+mkMsgBox :: Font -> IO MessageBox
+mkMsgBox fnt = do
+  blankImg <- Img.blank
+  return $ MessageBox
     { _msgBoxFontStyle = Font.Style fnt C.black 12
     , _msgBoxContent   = ""
-    , _msgBoxBg        = Img.Blank
-    , _msgBoxImg       = Img.Blank
+    , _msgBoxBg        = blankImg
+    , _msgBoxImg       = blankImg
     , _msgBoxPosition  = Vec.zero
     , _msgBoxSize      = Vec.zero
     }

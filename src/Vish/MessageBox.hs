@@ -30,14 +30,14 @@ resize stgSize msgBox = do
 
 
 setMessage :: String -> MessageBox -> IO MessageBox
-setMessage [] msgBox =
-   msgBox & return . (msgBoxContent .~ []) . (msgBoxImg .~ Img.Blank)
-setMessage str msgBox = do
-  let style = msgBox ^. msgBoxFontStyle
-  img <- Font.printToImage style str
+setMessage str mb = do
+  let sty = mb ^. msgBoxFontStyle
+  Img.unload (mb ^. msgBoxImg)
+  i <- Font.printToImage sty str
 
-  let msgSize = Img.imageSize img
-      msgBoxCenterPos = LO.alignCenter (msgBox ^. msgBoxSize) msgSize
-      pos = (msgBox ^. msgBoxPosition) + msgBoxCenterPos
-  msgBox & return . (msgBoxImg .~ img {Img.imagePosition = pos})
+  let s = i ^. Img.size
+      p = LO.alignCenter (mb ^. msgBoxSize) s
+      p' = (mb ^. msgBoxPosition) + p
+      i' = i & Img.position .~ p'
+  mb & return . (msgBoxImg .~ i')
                   . (msgBoxContent .~ str)

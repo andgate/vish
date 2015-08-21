@@ -23,9 +23,10 @@ data Interpreter = Interpreter
 mkInterpreter :: Script -> Font -> IO Interpreter
 mkInterpreter script fnt = do
   let script' = S.scriptToZipper script
+  stg <- mkStage fnt
   return Interpreter
       { _interpreterCommands = script'
-      , _interpreterStage = mkStage fnt
+      , _interpreterStage = stg
       , _interpreterWaiting = False
     }
 
