@@ -17,12 +17,16 @@ import Linear.V2 (V2 (..))
 import qualified Linear.Vector as Vec
 
 
-drawAll :: V2 Int -> [Image] -> IO ()
+drawAll :: V2 Int  -- ^ Screen size
+        -> [Image] -- ^ Images to draw, in-order.
+        -> IO ()
 drawAll scrnSize imgs =
   Util.withModelview scrnSize $
     forM_ imgs drawInView
 
-draw :: V2 Int -> Image -> IO ()
+draw :: V2 Int -- ^ Screen size
+     -> Image  -- ^ Image to draw
+     -> IO ()
 draw scrnSize img =
   Util.withModelview scrnSize $
     drawInView img

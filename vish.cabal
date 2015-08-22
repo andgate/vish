@@ -21,7 +21,6 @@ library
         Vish.Data.Config
         Vish.Data.Interpreter
         Vish.Data.MessageBox
-        Vish.Data.MessageBoxSkin
         Vish.Data.Object
         Vish.Data.Resource
         Vish.Data.Script
@@ -31,19 +30,19 @@ library
         Vish.Graphics.Data.Font
         Vish.Graphics.Data.Image
         Vish.Graphics.Data.Texture
-        Vish.Graphics.Data.TextureAtlas
+        Vish.Graphics.Data.ImageAtlas
         Vish.Graphics.Font
         Vish.Graphics.Image
         Vish.Graphics.Texture
-        Vish.Graphics.TextureAtlas
+        Vish.Graphics.ImageAtlas
         Vish.Graphics.Util
         Vish.Interpreter
         Vish.Layout
         Vish.MessageBox
-        Vish.MessageBoxSkin
         Vish.Resource
         Vish.Script
         Vish.Stage
+
     build-depends:
         attoparsec >=0.1 && <0.14,
         base <5,
@@ -65,11 +64,14 @@ library
         unordered-containers ==0.2.*,
         vector >0.10 && <0.11,
         yaml ==0.8.*
+
     default-language: Haskell2010
+
     default-extensions: OverloadedStrings UnicodeSyntax
                         PostfixOperators TupleSections PackageImports RecursiveDo
                         LambdaCase MultiWayIf TemplateHaskell
     hs-source-dirs: src
+
     ghc-options: -Wall -fwarn-tabs
 
 executable TestGame

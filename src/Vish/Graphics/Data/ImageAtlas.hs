@@ -1,20 +1,14 @@
-module Vish.Graphics.Data.TextureAtlas where
+module Vish.Graphics.Data.ImageAtlas where
 
-import Vish.Graphics.Data.Texture
+import Vish.Graphics.Image (Image)
+import qualified Vish.Graphics.Image as Img
 
 import Data.HashMap.Strict (HashMap)
+import Data.Yaml
 
 import Linear.V4 (V4 (..))
 
-import Data.Yaml
-
-data TextureAtlas =
-  TextureAtlas
-    { texture :: Texture
-    , regions :: TextureRegions
-    }
-
-type TextureRegions = HashMap String (V4 Float)
+type ImageAtlas = HashMap String Image
 
 data AtlasRegion =
   AtlasRegion

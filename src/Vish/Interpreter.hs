@@ -36,7 +36,7 @@ instance AppListener Interpreter where
     Graphics.init
 
     (winW, winH) <- appRef ^@ appWindow.windowSize
-    appRef & appWorld . interpreterStage @%~ Stage.setSize (V2 winW winH)
+    appRef & appWorld . interpreterStage @%= Stage.layout (V2 winW winH)
 
   appUpdate appRef = do
     isWaiting <- appRef ^@ appWorld.interpreterWaiting
@@ -60,11 +60,11 @@ instance AppListener Interpreter where
     return ()
 
   appResize appRef (winW, winH) = do
-    let s = V2 winW winH
+    let sS = V2 winW winH
 
-    Graphics.resize s
+    Graphics.resize sS
 
-    appRef & appWorld.interpreterStage @%= Stage.resize s
+    appRef & appWorld.interpreterStage @%= Stage.layout sS
 
 
 instance InputListener InterpreterInput where
