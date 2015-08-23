@@ -83,7 +83,7 @@ layoutBackground :: Stage -> Stage
 layoutBackground stg =
   let cS = fromIntegral <$> stg ^. stageSize
       eS = stg ^. stageBackground . Img.texture . Tex.srcSize
-      lo = LO.Layout LO.AlignCenterH LO.AlignCenterV LO.CropFill
+      lo = LO.Layout LO.AlignCenterH LO.AlignCenterV LO.Fill
       (eP', eS') = LO.layout lo Vec.zero cS eS
   in stg & (stageBackground . Img.position .~ eP')
          . (stageBackground . Img.size .~ eS')
@@ -95,7 +95,8 @@ setLeft i stg =
 
 layoutLeft :: Stage -> Stage
 layoutLeft stg =
-  let cS = fromIntegral <$> stg ^. stageSize
+  let sS = fromIntegral <$> stg ^. stageSize
+      cS = sS & Vec._x //~ 2
       eS = stg ^. stageLeft . Img.texture . Tex.srcSize
       lo = LO.Layout LO.AlignLeft LO.AlignBottom LO.Fit
       (eP', eS') = LO.layout lo Vec.zero cS eS

@@ -22,7 +22,7 @@ data VAlignment =
   | AlignCenterV
   | AlignBottom
 
-data Sizing = None | Fit | Fill | FillX | FillY | CropFill
+data Sizing = None | Fit | Fill | Stretch | StretchX | StretchY
 
 toSides :: V2 Double -- ^ Position
         -> V2 Double -- ^ Size
@@ -68,70 +68,76 @@ alignLeft :: V4 Double -- ^ Cell coords
           -> V4 Double -- ^ Element coords
           -> V4 Double -- ^ Aligned eLement coords
 alignLeft c e =
-  let eW  = (e ^. Vec4._y) - (e ^. Vec4._x)
-      eX1' = c^.Vec4._x
-      eX2' = eX1' + eW
-  in e & (Vec4._x .~ eX1')
-       . (Vec4._y .~ eX2')
+  e & (Vec4._x .~ eX1')
+    . (Vec4._y .~ eX2')
+  where
+    eW  = (e ^. Vec4._y) - (e ^. Vec4._x)
+    eX1' = c^.Vec4._x
+    eX2' = eX1' + eW
 
 
 alignCenterH :: V4 Double -- ^ Cell coords
              -> V4 Double -- ^ Element coords
              -> V4 Double -- ^ Aligned eLement coords
 alignCenterH c e =
-  let cW = (c ^. Vec4._y) - (c ^. Vec4._x)
-      eW = (e ^. Vec4._y) - (e ^. Vec4._x)
-      m  = (cW - eW) / 2
-      eX1' = (c^.Vec4._x) + m
-      eX2' = eX1' + eW
-  in e & (Vec4._x .~ eX1')
-       . (Vec4._y .~ eX2')
+  e & (Vec4._x .~ eX1')
+    . (Vec4._y .~ eX2')
+  where
+    cW = (c ^. Vec4._y) - (c ^. Vec4._x)
+    eW = (e ^. Vec4._y) - (e ^. Vec4._x)
+    m  = (cW - eW) / 2
+    eX1' = (c^.Vec4._x) + m
+    eX2' = eX1' + eW
 
 
 alignRight :: V4 Double -- ^ Cell x1, x2
            -> V4 Double -- ^ Element x1, x2
            -> V4 Double -- ^ ELement x1', x2'
 alignRight c e =
-  let eW   = (e ^. Vec4._y) - (e ^. Vec4._x)
-      eX1' = eX2' - eW
-      eX2' = c^.Vec4._y
-  in e & (Vec4._x .~ eX1')
-       . (Vec4._y .~ eX2')
+  e & (Vec4._x .~ eX1')
+    . (Vec4._y .~ eX2')
+  where
+    eW   = (e ^. Vec4._y) - (e ^. Vec4._x)
+    eX1' = eX2' - eW
+    eX2' = c^.Vec4._y
 
 
 alignTop :: V4 Double -- ^ Cell coords
          -> V4 Double -- ^ Element coords
          -> V4 Double -- ^ Aligned eLement coords
 alignTop c e =
- let eH  = (e ^. Vec4._w) - (e ^. Vec4._z)
-     eY1' = c^.Vec4._z
-     eY2' = eY1' + eH
- in e & (Vec4._z .~ eY1')
-      . (Vec4._w .~ eY2')
+  e & (Vec4._z .~ eY1')
+    . (Vec4._w .~ eY2')
+  where
+    eH  = (e ^. Vec4._w) - (e ^. Vec4._z)
+    eY1' = c^.Vec4._z
+    eY2' = eY1' + eH
 
 
 alignCenterV :: V4 Double -- ^ Cell coords
              -> V4 Double -- ^ Element coords
              -> V4 Double -- ^ Aligned eLement coords
 alignCenterV c e =
- let cH = (c^.Vec4._w) - (c^.Vec4._z)
-     eH = (e^.Vec4._w) - (e^.Vec4._z)
-     m  = (cH - eH) / 2
-     eY1' = (c^.Vec4._z) + m
-     eY2' = eY1' + eH
- in e & (Vec4._z .~ eY1')
-      . (Vec4._w .~ eY2')
+  e & (Vec4._z .~ eY1')
+    . (Vec4._w .~ eY2')
+  where
+    cH = (c^.Vec4._w) - (c^.Vec4._z)
+    eH = (e^.Vec4._w) - (e^.Vec4._z)
+    m  = (cH - eH) / 2
+    eY1' = (c^.Vec4._z) + m
+    eY2' = eY1' + eH
 
 
 alignBottom :: V4 Double -- ^ Cell x1, x2
             -> V4 Double -- ^ Element x1, x2
             -> V4 Double -- ^ ELement x1', x2'
 alignBottom c e =
- let eH   = (e ^. Vec4._w) - (e ^. Vec4._z)
-     eY1' = eY2' - eH
-     eY2' = c^.Vec4._w
- in e & (Vec4._z .~ eY1')
-      . (Vec4._w .~ eY2')
+  e & (Vec4._z .~ eY1')
+    . (Vec4._w .~ eY2')
+  where
+    eH   = (e ^. Vec4._w) - (e ^. Vec4._z)
+    eY1' = eY2' - eH
+    eY2' = c^.Vec4._w
 
 
 size :: Sizing   -- ^ Sizing to adjust element to
@@ -140,42 +146,69 @@ size :: Sizing   -- ^ Sizing to adjust element to
      -> V4 Double -- ^ Element coordinates after
 size None     _ = id
 size Fit      c = sizeFit c
-size Fill     c = sizeFillX c . sizeFillY c
-size FillX    c = sizeFillX c
-size FillY    c = sizeFillY c
-size CropFill c = sizeCropFill c
+size Fill     c = sizeFill c
+size Stretch  c = sizeStretchX c . sizeStretchY c
+size StretchX c = sizeStretchX c
+size StretchY c = sizeStretchY c
 
 
 sizeFit :: V4 Double -- ^ Cell coordinates
         -> V4 Double -- ^ Element coordinates
         -> V4 Double -- ^ Element coordinates after
-sizeFit c@(V4 cX1 cX2 cY1 cY2) e@(V4 eX1 eX2 eY1 eY2)
-  | dX < dY =
-      V4 (eX1+dX1) (eX2+dX2) (eY1+dX/2) (eY2+dX/2)
-  | otherwise =
-      V4 (eX1+dY/2) (eX2+dY/2) (eY1+dY1) (eY2+dY2)
+sizeFit =
+  scaleBy min
+
+sizeFill :: V4 Double -- ^ Cell coordinates
+         -> V4 Double -- ^ Element coordinates
+         -> V4 Double -- ^ Element coordinates after
+sizeFill =
+  scaleBy max
+
+scaleBy :: (Double -> Double -> Double) -- min/max function
+        -> V4 Double -- ^ Cell coordinates
+        -> V4 Double -- ^ Element coordinates
+        -> V4 Double -- ^ Element coordinates after
+scaleBy scaleF c@(V4 cX1 cX2 cY1 cY2) e@(V4 eX1 eX2 eY1 eY2) =
+  (V4 eX1' eX2' eY1' eY2')
   where
-    (V4 dX1 dX2 dY1 dY2) =
-      V4 (cX1-eX1) (eX2-cX2) (cY1-eY1) (eY2-cY2)
-    (V2 dX dY) =
-      (abs $ V2 dX1 dX2) + (abs $ V2 dY1 dY2)
+    (cW, cH) = (cX2 - cX1, cY2 - cY1)
+    (eW, eH) = (eX2 - eX1, eY2 - eY1)
+    (V4 dL dR dT dB) =
+      abs (c-e)
+    (V2 dW dH) =
+      (V2 dL dT) + (V2 dR dB)
 
+    sclX = if eW == 0 then 0 else cW/eW
+    sclY = if eH == 0 then 0 else cH/eH
+    scl  = scaleF sclX sclY
 
-sizeFillX :: V4 Double -- ^ Cell coordinates
-          -> V4 Double -- ^ Element coordinates
-          -> V4 Double -- ^ Element coordinates after
-sizeFillX (V4 cX1 cX2 cY1 xY2) (V4 eX1 eX2 eY1 eY2) =
+    eW' = eW * scl
+    eH' = eH * scl
+    deW' = eW' - eW
+    deH' = eH' - eH
+
+    -- Find the growth on each side
+    -- from the ratios of growth allowed
+    -- on each side.
+    dL' = if dW == 0 then 0 else deW' * dL/dW
+    dR' = if dW == 0 then 0 else deW' * dR/dW
+    dT' = if dW == 0 then 0 else deH' * dT/dH
+    dB' = if dW == 0 then 0 else deH' * dB/dH
+
+    eX1' = eX1 - dL'
+    eX2' = eX2 + dR'
+    eY1' = eY1 - dT'
+    eY2' = eY2 + dB'
+
+sizeStretchX :: V4 Double -- ^ Cell coordinates
+             -> V4 Double -- ^ Element coordinates
+             -> V4 Double -- ^ Element coordinates after
+sizeStretchX (V4 cX1 cX2 cY1 xY2) (V4 eX1 eX2 eY1 eY2) =
   V4 cX1 cX2 eY1 eY2
 
 
-sizeFillY :: V4 Double -- ^ Cell coordinates
-          -> V4 Double -- ^ Element coordinates
-          -> V4 Double -- ^ Element coordinates after
-sizeFillY (V4 _ _ cY1 cY2) (V4 eX1 eX2 _ _) =
-  V4 eX1 eX2 cY1 cY2
-
-sizeCropFill :: V4 Double -- ^ Cell coordinates
+sizeStretchY :: V4 Double -- ^ Cell coordinates
              -> V4 Double -- ^ Element coordinates
              -> V4 Double -- ^ Element coordinates after
-sizeCropFill (V4 cX1 cX2 cY1 xY2) e@(V4 eX1 eX2 eY1 eY2) =
-  e
+sizeStretchY (V4 _ _ cY1 cY2) (V4 eX1 eX2 _ _) =
+  V4 eX1 eX2 cY1 cY2
