@@ -6,9 +6,13 @@ import Graphics.Rendering.OpenGL.GL (($=))
 
 import Linear.V2 (V2 (..))
 
-gf :: Float -> GL.GLfloat
+gf :: Double -> GL.GLfloat
 gf = unsafeCoerce
 {-# INLINE gf #-}
+
+gd :: Double -> GL.GLdouble
+gd = unsafeCoerce
+{-# INLINE gd #-}
 
 gsizei :: Int -> GL.GLsizei
 gsizei = unsafeCoerce

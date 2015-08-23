@@ -30,14 +30,14 @@ drawTex tex =
   drawTexXY tex Vec.zero
 
 drawTexXY :: Texture  -- ^ The texture to draw
-          -> V2 Float -- ^ The position to draw at
+          -> V2 Double -- ^ The position to draw at
           -> IO ()
 drawTexXY t p =
   drawTexXYWH t p (t^.size)
 
 drawTexXYWH :: Texture  -- ^ The texture to draw
-            -> V2 Float -- ^ The position to draw at
-            -> V2 Float -- ^ The size to draw as
+            -> V2 Double -- ^ The position to draw at
+            -> V2 Double -- ^ The size to draw as
             -> IO ()
 drawTexXYWH t p s = do
   texObjMaybe <- readIORef (t^.object)
@@ -64,8 +64,8 @@ drawTexXYWH t p s = do
       GL.renderPrimitive GL.Quads $
         zipWithM_
           (\(vX, vY) (tX, tY) -> do
-            GL.texCoord $ GL.TexCoord2 (gf tX) (gf tY)
-            GL.vertex   $ GL.Vertex2   (gf vX) (gf vY))
+            GL.texCoord $ GL.TexCoord2 (gd tX) (gd tY)
+            GL.vertex   $ GL.Vertex2   (gd vX) (gd vY))
           (rectPath p s)
           (rectPath (t^.position) (t^.size))
 
@@ -73,7 +73,7 @@ drawTexXYWH t p s = do
 
       GL.texture GL.Texture2D $= GL.Disabled
   where
-    rectPath :: V2 Float -> V2 Float -> [(Float, Float)]
+    rectPath :: V2 Double -> V2 Double -> [(Double, Double)]
     rectPath (V2 x y) (V2 w h) =
       [(x, y), (x+w, y), (x+w, y+h), (x,y+h)]
 

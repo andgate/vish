@@ -15,6 +15,7 @@ import qualified Vish.Graphics.Image as Img
 
 import qualified Vish.Graphics.Texture as Tex
 
+import Control.Lens
 import Control.Monad
 
 import Codec.Picture( PixelRGBA8( .. ) )
@@ -39,7 +40,7 @@ printToImage style str =
 
 -- Needs to load the vertices to the
 -- for drawing later
-printToImageXY :: Style -> String -> V2 Float -> IO Image
+printToImageXY :: Style -> String -> V2 Double -> IO Image
 printToImageXY
     (Style fnt (C.Color r g b a) spx)
     str
@@ -49,10 +50,9 @@ printToImageXY
       spt = Font.pixelSizeInPointAtDpi spx dpi
       (BoundingBox x1 y1 x2 y2 _) =
         Font.stringBoundingBox fnt dpi spt str
-      imgW = ceiling $ x2 - x1
-      imgH = ceiling $ y2 - y1
+      V2 wI hI = floor <$> V2 (x2-x1) (y2-y1)
       jpImg =
-        R.renderDrawingAtDpi imgW imgH dpi (PixelRGBA8 255 255 255 0)
+        R.renderDrawingAtDpi wI hI dpi (PixelRGBA8 255 255 255 0)
           . R.withTexture (R.uniformTexture $ PixelRGBA8 r g b a) $
             R.printTextAt fnt spt (R.V2 0 y2) str
   tex <- Tex.sendToGpu "" jpImg GL.RGBA8 GL.RGBA GL.UnsignedByte

@@ -18,13 +18,13 @@ import qualified Vish.Graphics.Texture as Tex
 
 import Linear.V2 (V2 (..))
 import qualified Linear.V2 as Vec
+import qualified Linear.Vector as Vec
 
 import Control.Lens
 import Control.Monad
 
 draw :: Stage -> IO ()
-draw stg = do
-
+draw stg =
   let mb = stg ^. stageMsgBox
       is =
         [ stg ^. stageBackground
@@ -34,7 +34,8 @@ draw stg = do
         , mb  ^. MsgBox.text
         ]
       stgS = stg ^. stageSize
-  Img.drawAll stgS is
+  in Img.drawAll stgS is
+
 
 layout :: V2 Int -> Stage -> IO Stage
 layout sS stg =
@@ -54,6 +55,7 @@ layoutMsgBox stg = do
   mb' <- MsgBox.layout stgS mb
   stg & return . (stageMsgBox .~ mb')
 
+
 setMessage :: String -> Stage -> IO Stage
 setMessage msg stg = do
   let msgBox = stg ^. stageMsgBox
@@ -62,22 +64,13 @@ setMessage msg stg = do
 
 clearMessage :: Stage -> IO Stage
 clearMessage stg = do
-  Img.unload (stg ^. stageMsgBox . MsgBox.text)
-  blankImg   <- Img.blank
-  stg & return
-      . (stageMsgBox . MsgBox.text .~ blankImg)
-
+  let msgBox = stg ^. stageMsgBox
+  msgBox' <- MsgBox.setMessage "" msgBox
+  stg & return . (stageMsgBox .~ msgBox')
 
 setBackground :: Image -> Stage -> IO Stage
-setBackground img stg =  do
-  let maxMeas = fromIntegral <$> stg ^. stageSize
-      elemMeas = img ^. Img.texture . Tex.srcSize
-
-      elemMeas' = LO.calcFillCropSize maxMeas elemMeas
-      elemPos = LO.alignCenter maxMeas elemMeas'
-      img' = img & (Img.position .~ elemPos)
-                 . (Img.size .~ elemMeas')
-  stg & return . (stageBackground .~ img')
+setBackground i stg =
+  stg & return . layoutBackground . (stageBackground .~ i)
 
 clearBackground :: Stage -> IO Stage
 clearBackground stg = do
@@ -88,13 +81,12 @@ clearBackground stg = do
 
 layoutBackground :: Stage -> Stage
 layoutBackground stg =
-  let maxMeas = fromIntegral <$> stg ^. stageSize
-      elemMeas = stg ^. stageBackground . Img.texture . Tex.srcSize
-
-      elemMeas' = LO.calcFillCropSize maxMeas elemMeas
-      elemPos = LO.alignCenter maxMeas elemMeas'
-  in stg & (stageBackground . Img.position .~ elemPos)
-         . (stageBackground . Img.size .~ elemMeas')
+  let cS = fromIntegral <$> stg ^. stageSize
+      eS = stg ^. stageBackground . Img.texture . Tex.srcSize
+      lo = LO.Layout LO.AlignCenterH LO.AlignCenterV LO.CropFill
+      (eP', eS') = LO.layout lo Vec.zero cS eS
+  in stg & (stageBackground . Img.position .~ eP')
+         . (stageBackground . Img.size .~ eS')
 
 
 setLeft :: Image -> Stage -> IO Stage
@@ -103,15 +95,13 @@ setLeft i stg =
 
 layoutLeft :: Stage -> Stage
 layoutLeft stg =
-  let maxMeas = fromIntegral <$> stg ^. stageSize
-      halfMaxMeas = maxMeas & Vec._x //~ 2
+  let cS = fromIntegral <$> stg ^. stageSize
+      eS = stg ^. stageLeft . Img.texture . Tex.srcSize
+      lo = LO.Layout LO.AlignLeft LO.AlignBottom LO.Fit
+      (eP', eS') = LO.layout lo Vec.zero cS eS
+  in stg & (stageLeft . Img.position .~ eP')
+         . (stageLeft . Img.size     .~ eS')
 
-      elemMeas = stg ^. stageLeft . Img.texture . Tex.srcSize
-      elemMeas' = LO.calcFitSize halfMaxMeas elemMeas
-      elemPos = LO.alignBottomCenter halfMaxMeas elemMeas'
-
-  in stg & (stageLeft . Img.position .~ elemPos)
-         . (stageLeft . Img.size     .~ elemMeas')
 
 setRight :: Image -> Stage -> IO Stage
 setRight i stg =
@@ -119,17 +109,15 @@ setRight i stg =
 
 layoutRight :: Stage -> Stage
 layoutRight stg =
-  let maxMeas = fromIntegral <$> stg ^. stageSize
-      halfMaxMeas = maxMeas & Vec._x //~ 2
+  let sS = fromIntegral <$> stg ^. stageSize
+      cS = sS & Vec._x //~ 2
+      cP = cS & Vec._y .~ 0
+      eS = stg ^. stageRight . Img.texture . Tex.srcSize
+      lo = LO.Layout LO.AlignRight LO.AlignBottom LO.Fit
+      (eP', eS') = LO.layout lo cP cS eS
+  in stg & (stageRight . Img.position .~ eP')
+         . (stageRight . Img.size .~ eS')
 
-      elemMeas = stg ^. stageRight . Img.texture . Tex.srcSize
-      elemMeas' = LO.calcFitSize halfMaxMeas elemMeas
-
-      elemPos = LO.alignBottomCenter halfMaxMeas elemMeas'
-      elemPos' = elemPos & Vec._x +~ (halfMaxMeas ^. Vec._x)
-
-  in stg & (stageRight . Img.position .~ elemPos')
-         . (stageRight . Img.size .~ elemMeas')
 
 setCenter :: Image -> Stage -> IO Stage
 setCenter i stg =
@@ -139,13 +127,13 @@ setCenter i stg =
 
 layoutCenter :: Stage -> Stage
 layoutCenter stg =
-  let maxMeas = fromIntegral <$> stg ^. stageSize
-      elemMeas = stg ^. stageCenter . Img.texture . Tex.srcSize
-      elemMeas' = LO.calcFitSize maxMeas elemMeas
-      elemPos = LO.alignBottomCenter maxMeas elemMeas'
+  let cS = fromIntegral <$> stg ^. stageSize
+      eS = stg ^. stageCenter . Img.texture . Tex.srcSize
+      lo = LO.Layout LO.AlignCenterH LO.AlignBottom LO.Fit
+      (eP', eS') = LO.layout lo Vec.zero cS eS
+  in stg & (stageCenter . Img.position .~ eP')
+         . (stageCenter . Img.size .~ eS')
 
-  in stg & (stageCenter . Img.position .~ elemPos)
-         . (stageCenter . Img.size .~ elemMeas')
 
 clearActors :: Stage -> IO Stage
 clearActors stg = do

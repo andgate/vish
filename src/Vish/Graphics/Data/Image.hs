@@ -11,8 +11,8 @@ import qualified Linear.Vector as Vec
 data Image =
   Image
     { _texture  :: Texture
-    , _position :: V2 Float
-    , _size     :: V2 Float
+    , _position :: V2 Double
+    , _size     :: V2 Double
     }
 
 blank :: IO Image

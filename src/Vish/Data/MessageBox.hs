@@ -19,8 +19,8 @@ import Control.Lens
 data MessageBox =
   MessageBox
   { _content   :: String
-  , _position  :: V2 Float
-  , _size      :: V2 Float
+  , _position  :: V2 Double
+  , _size      :: V2 Double
   , _fontStyle :: Font.Style
   , _skin      :: ImageAtlas
   , _text      :: Image

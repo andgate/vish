@@ -41,14 +41,14 @@ load :: FilePath -- ^ Image file path
 load fp =
   liftM mkImage $ Tex.load fp
 
-loadXY :: V2 Float -- ^ Image position
+loadXY :: V2 Double -- ^ Image position
        -> FilePath -- ^ Image file path
        -> IO Image
 loadXY p fp =
   liftM (mkImageXY p) $ Tex.load fp
 
-loadXYWH :: V2 Float -- ^ Image position
-         -> V2 Float -- ^ Image size
+loadXYWH :: V2 Double -- ^ Image position
+         -> V2 Double -- ^ Image size
          -> FilePath -- ^ Image file path
          -> IO Image
 loadXYWH p s fp =
@@ -64,14 +64,14 @@ mkImage t =
   let p = Vec.zero
   in mkImageXY p t
 
-mkImageXY :: V2 Float -- ^ Image position
+mkImageXY :: V2 Double -- ^ Image position
           -> Texture  -- ^ Image texture
           -> Image
 mkImageXY p t =
   mkImageXYWH p (t^.Tex.srcSize) t
 
-mkImageXYWH :: V2 Float -- ^ Image position
-            -> V2 Float -- ^ Image measurements
+mkImageXYWH :: V2 Double -- ^ Image position
+            -> V2 Double -- ^ Image measurements
             -> Texture  -- ^ Image texture
             -> Image
 mkImageXYWH p s t =
