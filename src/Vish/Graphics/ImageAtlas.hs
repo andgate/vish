@@ -52,9 +52,12 @@ toSubImage :: Image       -- ^ Image to take from
            -> (String, Image) -- Name of the region, The image of the region
 toSubImage img (AtlasRegion n l r t b) =
   let (V2 srcW srcH) = img^. Img.texture . Tex.srcSize
-      (V4 tx tw ty th) = (fromIntegral <$> V4 l (r-l) t (b-t)) / V4 srcW srcW srcH srcH
-      subImg = img & (Img.texture . Tex.position .~ V2 tx ty)
+      ps@(V4 x w y h) = fromIntegral <$> V4 l (r-l) t (b-t)
+      (V4 tx tw ty th) = ps / V4 srcW srcW srcH srcH
+      subImg = img & (Img.size .~ V2 w h)
+                   . (Img.texture . Tex.position .~ V2 tx ty)
                    . (Img.texture . Tex.size .~ V2 tw th)
+                   . (Img.texture . Tex.srcSize .~ V2 w h)
   in (n, subImg)
 
 loadAtlas :: FilePath -> IO [AtlasRegion]
@@ -70,3 +73,9 @@ drawRegion ss ia n =
   maybe (error $ "Cannot find \"" ++ n ++ "\" in texture atlas.")
         (Img.draw ss)
         $ HM.lookup n ia
+
+grab :: ImageAtlas -> String -> Image
+grab ia str =
+  maybe (error $ str ++ " not found in atlas.")
+        (id)
+        (ia ^. at str)

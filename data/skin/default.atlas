@@ -46,7 +46,7 @@
   top: 23
   bottom: 30
 
-- name: bottom_left
+- name: bottom_right
   left: 23
   right: 30
   top: 23

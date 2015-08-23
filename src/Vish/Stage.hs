@@ -10,9 +10,12 @@ import qualified Vish.Layout as LO
 
 import Vish.MessageBox (MessageBox)
 import qualified Vish.MessageBox as MsgBox
+import Vish.MessageBoxSkin (MessageBoxSkin)
+import qualified Vish.MessageBoxSkin as Skin
 
-import Vish.Graphics.Image (Image (..))
+import Vish.Graphics.Image (Image)
 import qualified Vish.Graphics.Image as Img
+import Vish.Graphics.ImageAtlas (ImageAtlas)
 import Vish.Graphics.Texture (Texture)
 import qualified Vish.Graphics.Texture as Tex
 
@@ -31,8 +34,9 @@ draw stg =
         , stg ^. stageLeft
         , stg ^. stageRight
         , stg ^. stageCenter
-        , mb  ^. MsgBox.text
         ]
+          ++ Skin.toList (mb ^. MsgBox.skin)
+          ++ [(mb ^. MsgBox.text)]
       stgS = stg ^. stageSize
   in Img.drawAll stgS is
 
@@ -67,6 +71,12 @@ clearMessage stg = do
   let msgBox = stg ^. stageMsgBox
   msgBox' <- MsgBox.setMessage "" msgBox
   stg & return . (stageMsgBox .~ msgBox')
+
+
+setMsgBoxSkin :: ImageAtlas -> Stage -> IO Stage
+setMsgBoxSkin skn stg =
+  stg & return . (stageMsgBox %~ (MsgBox.setSkin skn))
+
 
 setBackground :: Image -> Stage -> IO Stage
 setBackground i stg =

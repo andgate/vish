@@ -1,14 +1,14 @@
 module Vish.Data.Config where
 
 import Control.Applicative
+import Control.Lens
 import Data.Yaml
 import System.FilePath
 
-
 data Config =
   Config
-    { gameConfigFontName :: String
-    , gameConfigSkinName :: String
+    { _fontName :: String
+    , _skinName :: String
     }
 
 instance FromJSON Config where
@@ -17,3 +17,5 @@ instance FromJSON Config where
              <*> v .: "skin"
     -- A non-Object value is of the wrong type, so fail.
     parseJSON _ = empty
+
+makeLenses ''Config

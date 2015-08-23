@@ -6,10 +6,12 @@ where
 
 import Vish.Data.Interpreter
 
+import qualified Vish.Data.Config as Cfg
+import Vish.Resource
+
 import Vish.Script (Script, ScriptCommand, Name, Actor)
 import qualified Vish.Script as S
 
-import Vish.Resource
 
 import GXK.App
 import GXK.Data.App
@@ -22,7 +24,9 @@ import qualified Vish.Stage as Stage
 import qualified Vish.Graphics as Graphics
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
+import qualified Vish.Graphics.ImageAtlas as ImgAtlas
 import qualified Vish.Graphics.Texture as Tex
+
 
 import Control.Lens
 import GXK.Data.IORef.Lens
@@ -37,6 +41,8 @@ instance AppListener Interpreter where
 
     (winW, winH) <- appRef ^@ appWindow.windowSize
     appRef & appWorld . interpreterStage @%= Stage.layout (V2 winW winH)
+
+    loadMessageBoxSkin appRef
 
   appUpdate appRef = do
     isWaiting <- appRef ^@ appWorld.interpreterWaiting
@@ -143,3 +149,12 @@ setMessage :: AppRef Interpreter -> String -> IO ()
 setMessage appRef msg = do
   appRef & appWorld.interpreterStage @%= Stage.clearMessage
   appRef & appWorld.interpreterStage @%= Stage.setMessage msg
+
+loadMessageBoxSkin :: AppRef Interpreter -> IO ()
+loadMessageBoxSkin appRef = do
+  skinName <- appRef ^@ appWorld . interpreterConfig. Cfg.skinName
+  skinImageFilename <- findSkinImage skinName
+
+  msgboxAtlas <- ImgAtlas.load skinImageFilename (atlasFile skinName)
+
+  appRef & appWorld . interpreterStage @%= Stage.setMsgBoxSkin msgboxAtlas

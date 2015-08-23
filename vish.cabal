@@ -45,6 +45,7 @@ library
                       Vish.Data.Config
                       Vish.Data.Interpreter
                       Vish.Data.MessageBox
+                      Vish.Data.MessageBoxSkin
                       Vish.Data.Object
                       Vish.Data.Resource
                       Vish.Data.Script
@@ -63,6 +64,7 @@ library
                       Vish.Interpreter
                       Vish.Layout
                       Vish.MessageBox
+                      Vish.MessageBoxSkin
                       Vish.Resource
                       Vish.Script
                       Vish.Stage

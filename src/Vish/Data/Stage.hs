@@ -1,7 +1,6 @@
 module Vish.Data.Stage where
 
 import Vish.MessageBox (MessageBox, mkMsgBox)
-
 import Vish.Graphics.Image (Image (..))
 import qualified Vish.Graphics.Image as Img
 

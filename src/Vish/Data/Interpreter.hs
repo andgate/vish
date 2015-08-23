@@ -4,6 +4,7 @@ import Vish.Script (Script, ScriptCommand)
 import qualified Vish.Script as S
 import Vish.Stage (Stage, mkStage)
 import Vish.Graphics.Font (Font)
+import Vish.Data.Config (Config)
 
 --import GXK.App
 import GXK.Data.App
@@ -18,16 +19,18 @@ data Interpreter = Interpreter
   { _interpreterCommands :: Z.Zipper ScriptCommand
   , _interpreterStage :: Stage
   , _interpreterWaiting :: Bool
+  , _interpreterConfig :: Config
   }
 
-mkInterpreter :: Script -> Font -> IO Interpreter
-mkInterpreter script fnt = do
+mkInterpreter :: Config -> Script -> Font -> IO Interpreter
+mkInterpreter cfg script fnt = do
   let script' = S.scriptToZipper script
   stg <- mkStage fnt
   return Interpreter
-      { _interpreterCommands = script'
-      , _interpreterStage = stg
-      , _interpreterWaiting = False
+    { _interpreterCommands = script'
+    , _interpreterStage = stg
+    , _interpreterWaiting = False
+    , _interpreterConfig = cfg
     }
 
 makeLenses ''Interpreter

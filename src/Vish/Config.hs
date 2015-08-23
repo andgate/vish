@@ -11,11 +11,13 @@ import Vish.Data.Resource
 
 import qualified Vish.Graphics.Font as Font
 
+import Control.Lens
 import Data.Yaml
 import System.FilePath
 
+
 load :: IO Config
-load = loadFile gameConfigFile
+load = loadFile interpreterConfigFile
 
 loadFile :: FilePath -> IO Config
 loadFile path = do
@@ -23,8 +25,8 @@ loadFile path = do
   return $ either (error . show) id eitherAppConfig
 
 toInterpreter :: Script -> Config -> IO Interpreter
-toInterpreter script gameCfg = do
-  let fntName = gameConfigFontName gameCfg
-      fntPath = "data/font/" ++ fntName ++ ".ttf"
-  fnt <- Font.load fntPath
-  mkInterpreter script fnt
+toInterpreter script cfg = do
+  let fntN = cfg^.fontName
+      fntFp = "data/font/" ++ fntN ++ ".ttf"
+  fnt <- Font.load fntFp
+  mkInterpreter cfg script fnt

@@ -11,5 +11,14 @@ actorDirectory :: Name -> FilePath
 actorDirectory name =
   "data" </> "actor" </> name
 
-gameConfigFile :: FilePath
-gameConfigFile = "data" </> "Vish.yaml"
+interpreterConfigFile :: FilePath
+interpreterConfigFile =
+  "data" </> "Vish.yaml"
+
+skinDirectory :: FilePath
+skinDirectory =
+  "data" </> "skin"
+
+atlasFile :: String -> FilePath
+atlasFile name =
+  skinDirectory </> name <.> "atlas"
