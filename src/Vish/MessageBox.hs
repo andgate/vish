@@ -14,9 +14,7 @@ import Vish.Graphics.ImageAtlas (ImageAtlas)
 import qualified Vish.Graphics.Font as Font
 import qualified Vish.Graphics.Texture as Tex
 
-import Linear.V2 (V2 (..))
-import qualified Linear.V2 as Vec2
-import qualified Linear.Vector as Vec
+import Linear
 
 import Control.Lens
 
@@ -30,13 +28,13 @@ layoutCell :: V2 Int     -- ^ Stage size
 layoutCell sS mb =
   let cS = fromIntegral <$> sS
 
-      eS = cS & (Vec2._x *~ 6/8)
-              . (Vec2._y //~ 3)
-      eP = eS & Vec2._x .~ 0
+      eS = cS & (_x *~ 6/8)
+              . (_y //~ 3)
+      eP = eS & _x .~ 0
 
       lo = LO.Layout LO.AlignCenterH LO.AlignBottom LO.None
-      (eP', eS') = LO.layout lo Vec.zero cS eS
-      fS = sqrt $ (eS'^.Vec2._x/40 * eS'^.Vec2._y/4)
+      (eP', eS') = LO.layout lo zero cS eS
+      fS = sqrt $ (eS'^._x/40 * eS'^._y/4)
   in mb & (position .~ eP')
         . (size     .~ eS')
         . (fontStyle . Font.pixelSize .~ (realToFrac fS))
@@ -99,14 +97,14 @@ layoutSkinTop mb =
   mb & (skin . Skin.top . Img.position .~ eP')
      . (skin . Skin.top . Img.size     .~ eS')
   where
-    tlW = mb ^. skin . Skin.topLeft  . Img.size . Vec2._x
-    trW = mb ^. skin . Skin.topRight . Img.size . Vec2._x
+    tlW = mb ^. skin . Skin.topLeft  . Img.size . _x
+    trW = mb ^. skin . Skin.topRight . Img.size . _x
 
     mbP = mb ^. position
-    cP = mbP & Vec2._x +~ tlW
+    cP = mbP & _x +~ tlW
 
     mbS = mb ^. size
-    cS = mbS & Vec2._x -~ (tlW + trW)
+    cS = mbS & _x -~ (tlW + trW)
 
     eS = mb ^. skin . Skin.top . Img.texture . Tex.srcSize
     lo = LO.Layout LO.AlignCenterH LO.AlignTop LO.StretchX
@@ -129,14 +127,14 @@ layoutSkinLeft mb =
   mb & (skin . Skin.left . Img.position .~ eP')
      . (skin . Skin.left . Img.size     .~ eS')
   where
-    tlH = mb ^. skin . Skin.topLeft    . Img.size . Vec2._y
-    blH = mb ^. skin . Skin.bottomLeft . Img.size . Vec2._y
+    tlH = mb ^. skin . Skin.topLeft    . Img.size . _y
+    blH = mb ^. skin . Skin.bottomLeft . Img.size . _y
 
     mbP = mb ^. position
-    cP = mbP & Vec2._y +~ tlH
+    cP = mbP & _y +~ tlH
 
     mbS = mb ^. size
-    cS = mbS & Vec2._y -~ (tlH + blH)
+    cS = mbS & _y -~ (tlH + blH)
 
     eS = mb ^. skin . Skin.left . Img.texture . Tex.srcSize
     lo = LO.Layout LO.AlignLeft LO.AlignCenterV LO.StretchY
@@ -147,19 +145,19 @@ layoutSkinCenter mb =
   mb & (skin . Skin.center . Img.position .~ eP')
      . (skin . Skin.center . Img.size     .~ eS')
   where
-    rW = mb ^. skin . Skin.right  . Img.size . Vec2._x
-    lW = mb ^. skin . Skin.left   . Img.size . Vec2._x
-    tH = mb ^. skin . Skin.top    . Img.size . Vec2._y
-    bH = mb ^. skin . Skin.bottom . Img.size . Vec2._y
+    rW = mb ^. skin . Skin.right  . Img.size . _x
+    lW = mb ^. skin . Skin.left   . Img.size . _x
+    tH = mb ^. skin . Skin.top    . Img.size . _y
+    bH = mb ^. skin . Skin.bottom . Img.size . _y
 
     mbP = mb ^. position
-    cP = mbP & (Vec2._x +~ lW)
-             . (Vec2._y +~ tH)
+    cP = mbP & (_x +~ lW)
+             . (_y +~ tH)
 
 
     mbS = mb ^. size
-    cS = mbS & (Vec2._x -~ (lW + rW))
-             . (Vec2._y -~ (tH + bH))
+    cS = mbS & (_x -~ (lW + rW))
+             . (_y -~ (tH + bH))
 
     eS = mb ^. skin . Skin.center . Img.texture . Tex.srcSize
     lo = LO.Layout LO.AlignCenterH LO.AlignCenterV LO.Stretch
@@ -170,14 +168,14 @@ layoutSkinRight mb =
   mb & (skin . Skin.right . Img.position .~ eP')
      . (skin . Skin.right . Img.size     .~ eS')
   where
-    trH = mb ^. skin . Skin.topRight    . Img.size . Vec2._y
-    brH = mb ^. skin . Skin.bottomRight . Img.size . Vec2._y
+    trH = mb ^. skin . Skin.topRight    . Img.size . _y
+    brH = mb ^. skin . Skin.bottomRight . Img.size . _y
 
     mbP = mb ^. position
-    cP = mbP & Vec2._y +~ trH
+    cP = mbP & _y +~ trH
 
     mbS = mb ^. size
-    cS = mbS & Vec2._y -~ (trH + brH)
+    cS = mbS & _y -~ (trH + brH)
 
     eS = mb ^. skin . Skin.right . Img.texture . Tex.srcSize
     lo = LO.Layout LO.AlignRight LO.AlignCenterV LO.StretchY
@@ -200,16 +198,16 @@ layoutSkinBottom mb =
   mb & (skin . Skin.bottom . Img.position .~ eP')
      . (skin . Skin.bottom . Img.size     .~ eS')
   where
-    blW = mb ^. skin . Skin.bottomLeft  . Img.size . Vec2._x
-    brW = mb ^. skin . Skin.bottomRight . Img.size . Vec2._x
+    blW = mb ^. skin . Skin.bottomLeft  . Img.size . _x
+    brW = mb ^. skin . Skin.bottomRight . Img.size . _x
 
     mbP = mb ^. position
-    cP = mbP & Vec2._x +~ blW
+    cP = mbP & _x +~ blW
 
     mbS = mb ^. size
-    cS = mbS & Vec2._x -~ (blW + brW)
+    cS = mbS & _x -~ (blW + brW)
 
-    eS = mb ^. skin . Skin.bottomLeft . Img.texture . Tex.srcSize
+    eS = mb ^. skin . Skin.bottom . Img.texture . Tex.srcSize
     lo = LO.Layout LO.AlignCenterH LO.AlignBottom LO.StretchX
     (eP', eS') = LO.layout lo cP cS eS
 

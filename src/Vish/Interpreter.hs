@@ -65,12 +65,10 @@ instance AppListener Interpreter where
   appResume _ =
     return ()
 
-  appResize appRef (winW, winH) = do
-    let sS = V2 winW winH
+  appResize appRef wS = do
+    Graphics.resize wS
 
-    Graphics.resize sS
-
-    appRef & appWorld.interpreterStage @%= Stage.layout sS
+    appRef & appWorld.interpreterStage @%= Stage.layout wS
 
 
 instance InputListener InterpreterInput where

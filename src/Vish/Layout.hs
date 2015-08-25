@@ -1,10 +1,7 @@
 module Vish.Layout where
 
 import Control.Lens
-import Linear.V2 (V2 (..))
-import Linear.V4 (V4 (..))
-import qualified Linear.V4 as Vec4
-import qualified Linear.Vector as Vec
+import Linear
 
 data Layout =
   Layout
@@ -43,7 +40,7 @@ layout :: Layout   -- ^ Properties for the layout
        -> (V2 Double, V2 Double) -- ^ Elem position and size in cell with layout.
 layout (Layout hA vA s) cP cS eS  =
   let c = toSides cP cS
-      e = toSides Vec.zero eS
+      e = toSides zero eS
   in toPosSize . size s c . align hA vA c $ e
 
 align :: HAlignment -- ^ Horizontal alignment
@@ -68,11 +65,11 @@ alignLeft :: V4 Double -- ^ Cell coords
           -> V4 Double -- ^ Element coords
           -> V4 Double -- ^ Aligned eLement coords
 alignLeft c e =
-  e & (Vec4._x .~ eX1')
-    . (Vec4._y .~ eX2')
+  e & (_x .~ eX1')
+    . (_y .~ eX2')
   where
-    eW  = (e ^. Vec4._y) - (e ^. Vec4._x)
-    eX1' = c^.Vec4._x
+    eW  = (e ^. _y) - (e ^. _x)
+    eX1' = c^._x
     eX2' = eX1' + eW
 
 
@@ -80,13 +77,13 @@ alignCenterH :: V4 Double -- ^ Cell coords
              -> V4 Double -- ^ Element coords
              -> V4 Double -- ^ Aligned eLement coords
 alignCenterH c e =
-  e & (Vec4._x .~ eX1')
-    . (Vec4._y .~ eX2')
+  e & (_x .~ eX1')
+    . (_y .~ eX2')
   where
-    cW = (c ^. Vec4._y) - (c ^. Vec4._x)
-    eW = (e ^. Vec4._y) - (e ^. Vec4._x)
+    cW = (c ^. _y) - (c ^. _x)
+    eW = (e ^. _y) - (e ^. _x)
     m  = (cW - eW) / 2
-    eX1' = (c^.Vec4._x) + m
+    eX1' = (c^._x) + m
     eX2' = eX1' + eW
 
 
@@ -94,23 +91,23 @@ alignRight :: V4 Double -- ^ Cell x1, x2
            -> V4 Double -- ^ Element x1, x2
            -> V4 Double -- ^ ELement x1', x2'
 alignRight c e =
-  e & (Vec4._x .~ eX1')
-    . (Vec4._y .~ eX2')
+  e & (_x .~ eX1')
+    . (_y .~ eX2')
   where
-    eW   = (e ^. Vec4._y) - (e ^. Vec4._x)
+    eW   = (e ^. _y) - (e ^. _x)
     eX1' = eX2' - eW
-    eX2' = c^.Vec4._y
+    eX2' = c^._y
 
 
 alignTop :: V4 Double -- ^ Cell coords
          -> V4 Double -- ^ Element coords
          -> V4 Double -- ^ Aligned eLement coords
 alignTop c e =
-  e & (Vec4._z .~ eY1')
-    . (Vec4._w .~ eY2')
+  e & (_z .~ eY1')
+    . (_w .~ eY2')
   where
-    eH  = (e ^. Vec4._w) - (e ^. Vec4._z)
-    eY1' = c^.Vec4._z
+    eH  = (e ^. _w) - (e ^. _z)
+    eY1' = c^._z
     eY2' = eY1' + eH
 
 
@@ -118,13 +115,13 @@ alignCenterV :: V4 Double -- ^ Cell coords
              -> V4 Double -- ^ Element coords
              -> V4 Double -- ^ Aligned eLement coords
 alignCenterV c e =
-  e & (Vec4._z .~ eY1')
-    . (Vec4._w .~ eY2')
+  e & (_z .~ eY1')
+    . (_w .~ eY2')
   where
-    cH = (c^.Vec4._w) - (c^.Vec4._z)
-    eH = (e^.Vec4._w) - (e^.Vec4._z)
+    cH = (c^._w) - (c^._z)
+    eH = (e^._w) - (e^._z)
     m  = (cH - eH) / 2
-    eY1' = (c^.Vec4._z) + m
+    eY1' = (c^._z) + m
     eY2' = eY1' + eH
 
 
@@ -132,12 +129,12 @@ alignBottom :: V4 Double -- ^ Cell x1, x2
             -> V4 Double -- ^ Element x1, x2
             -> V4 Double -- ^ ELement x1', x2'
 alignBottom c e =
-  e & (Vec4._z .~ eY1')
-    . (Vec4._w .~ eY2')
+  e & (_z .~ eY1')
+    . (_w .~ eY2')
   where
-    eH   = (e ^. Vec4._w) - (e ^. Vec4._z)
+    eH   = (e ^. _w) - (e ^. _z)
     eY1' = eY2' - eH
-    eY2' = c^.Vec4._w
+    eY2' = c^._w
 
 
 size :: Sizing   -- ^ Sizing to adjust element to
@@ -192,8 +189,8 @@ scaleBy scaleF c@(V4 cX1 cX2 cY1 cY2) e@(V4 eX1 eX2 eY1 eY2) =
     -- on each side.
     dL' = if dW == 0 then 0 else deW' * dL/dW
     dR' = if dW == 0 then 0 else deW' * dR/dW
-    dT' = if dW == 0 then 0 else deH' * dT/dH
-    dB' = if dW == 0 then 0 else deH' * dB/dH
+    dT' = if dH == 0 then 0 else deH' * dT/dH
+    dB' = if dH == 0 then 0 else deH' * dB/dH
 
     eX1' = eX1 - dL'
     eX2' = eX2 + dR'

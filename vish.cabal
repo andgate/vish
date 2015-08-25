@@ -51,11 +51,11 @@ library
                       Vish.Data.Script
                       Vish.Data.Stage
                       Vish.Graphics
-                      Vish.Graphics.Data.Color
                       Vish.Graphics.Data.Font
                       Vish.Graphics.Data.Image
                       Vish.Graphics.Data.Texture
                       Vish.Graphics.Data.ImageAtlas
+                      Vish.Graphics.Data.Color
                       Vish.Graphics.Font
                       Vish.Graphics.Image
                       Vish.Graphics.Texture
